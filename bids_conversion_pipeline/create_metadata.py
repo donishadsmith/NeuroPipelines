@@ -59,7 +59,7 @@ def _create_json_sidecar_pipeline(
     for nifti_file in nifti_files:
         modality = nifti_file.parent.name
         if modality == "anat":
-            json_schema = _ANAT_JSON
+            json_schema = copy.deepcopy(_ANAT_JSON)
         else:
             json_schema = copy.deepcopy(_FUNC_JSON)
             json_schema["EffectiveEchoSpacing"] = (
