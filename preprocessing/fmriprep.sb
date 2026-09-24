@@ -10,7 +10,13 @@
 #SBATCH --output=/projects/bigos_lab/mph-study/code/logs/fmriprep_%A_%a.out
 #SBATCH --error=/projects/bigos_lab/mph-study/code/logs/fmriprep_%A_%a.err
 # -------------------------------------------------------------------------
-BAD_NODES_FILE="/projects/bigos_lab/mph-study/code/logs/bad_nodes_${SLURM_ARRAY_JOB_ID}.txt"
+# Use --array=0-NUMSUBS (e.g., sbatch --array=0-16 fmriprep.sb) to process multiple subjects at the same time
+FMRIPREP_VERSION="25.2.3"
+
+DATASET="mph"
+COHORT="kids" # kids, adults
+
+BAD_NODES_FILE="/projects/bigos_lab/${DATASET}-study/code/logs/bad_nodes_${SLURM_ARRAY_JOB_ID}.txt"
 
 if ! getent passwd $(id -u) > /dev/null 2>&1; then
     echo "$(hostname)" >> "$BAD_NODES_FILE"
@@ -21,12 +27,6 @@ if ! getent passwd $(id -u) > /dev/null 2>&1; then
     scontrol $SCONTROL_STRING
     exit 0
 fi
-
-# Use --array=0-NUMSUBS (e.g., sbatch --array=0-16 fmriprep.sb) to process multiple subjects at the same time
-FMRIPREP_VERSION="25.2.3"
-
-DATASET="mph"
-COHORT="kids" # kids, adults
 
 PYTHON="/projects/bigos_lab/envs/py313/bin/python"
 FS_LICENSE="/projects/bigos_lab/freesurfer/license.txt"
