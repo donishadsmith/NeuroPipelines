@@ -16,8 +16,8 @@ import pandas as pd
 
 from bidsaid.files import get_entity_value
 from bidsaid.logging import setup_logger
+from bidsaid.cli import none_or
 
-from _argparse_typing import convert_none
 from _utils import (
     compute_average_betas,
     create_condition_label_str,
@@ -81,7 +81,7 @@ def _get_cmd_args():
         dest="glm_dir",
         required=False,
         default=None,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Used only when ``analysis_type`` is gPPI. Used to compute the "
             "individual average beta coefficient from the glm for the ROIs."
@@ -92,7 +92,7 @@ def _get_cmd_args():
         dest="seed_mask_path",
         required=False,
         default=None,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Path to the seed mask used as the seed for the gPPI. "
             "Used only when ``analysis_type`` is gPPI. "
@@ -125,7 +125,7 @@ def _get_cmd_args():
         dest="exclude_niftis_file",
         default=None,
         required=False,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Path to a file containing prefixes of the filename of the NIfTI images to exclude. "
             "Can list the fill name of the file (no parent directories) to exlude that specific file "

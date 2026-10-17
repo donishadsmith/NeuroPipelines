@@ -10,8 +10,8 @@ from pandas.api.types import is_object_dtype, is_string_dtype
 from bidsaid.files import get_entity_value
 from bidsaid.logging import setup_logger
 from bidsaid.io import compress_image
+from bidsaid.cli import none_or
 
-from _argparse_typing import convert_none
 from _denoising import remove_collinear_columns
 from _report import HTMLReport
 from _second_level_utils import (
@@ -85,7 +85,7 @@ def _get_cmd_args():
         dest="gm_probseg_img_path",
         default=None,
         required=False,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "The probability mask for gray matter voxels. Should approximately be in same space as the template."
             "Used to exclude non-gray matter voxels in the group mask and exclude false activations from "
@@ -105,7 +105,7 @@ def _get_cmd_args():
         dest="apriori_img_path",
         default=None,
         required=False,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Reduce the search space to the mask. If ``gm_probseg_img_path`` is supplied, the intersected group "
             "mask is restricted to the gray matter mask then restricted to the apriori mask. Note that "
@@ -276,7 +276,7 @@ def _get_cmd_args():
         dest="exclude_niftis_file",
         default=None,
         required=False,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Path to a file containing prefixes of the filename of the NIfTI images to exclude. "
             "Can list the fill name of the file (no parent directories) to exlude that specific file "

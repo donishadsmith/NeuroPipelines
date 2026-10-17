@@ -84,6 +84,7 @@ import nibabel as nib, numpy as np, pandas as pd
 
 from bidsaid.logging import setup_logger
 from bidsaid.metadata import get_tr, get_n_volumes
+from bidsaid.cli import none_or, n_dummy_type, str_to_bool
 
 from _denoising import (
     get_cosine_regressors,
@@ -98,7 +99,6 @@ from _gen_afni_files import (
     create_timing_files,
     create_nuisance_regressor_file,
 )
-from _argparse_typing import n_dummy_type, boolean_flags, convert_none
 from _first_level_utils import (
     CONDITION_DURATIONS,
     EVENT_RELATED_TASKS,
@@ -190,7 +190,7 @@ def _get_cmd_args():
         dest="filter_correct_trials",
         required=False,
         default=False,
-        type=boolean_flags,
+        type=str_to_bool,
         help="Filter correct trials for event-related tasks.",
     )
     parser.add_argument(
@@ -265,7 +265,7 @@ def _get_cmd_args():
         "--upsample_dt",
         dest="upsample_dt",
         default=0.1,
-        type=convert_none(float),
+        type=none_or(float),
         required=False,
         help=(
             "Time resolution to upsample seed timeseries (and condition times) to prior "
@@ -300,7 +300,7 @@ def _get_cmd_args():
         dest="exclude_niftis_file",
         default=None,
         required=False,
-        type=convert_none(),
+        type=none_or(),
         help=(
             "Path to a file containing prefixes of the filename of the NIfTI images to exclude. "
             "Can list the fill name of the file (no parent directories) to exlude that specific file "
