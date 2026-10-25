@@ -262,7 +262,7 @@ def _check_coordinate(coordinate):
         raise ValueError(f"Invalid MNI coordinate: {','.join(coordinate)}")
 
 
-def get_template_images(cohort):
+def get_template_imgs(cohort):
     return (
         COHORT_MAP[cohort]["template_mask_path"],
         COHORT_MAP[cohort]["template_img_path"],

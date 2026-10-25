@@ -9,7 +9,7 @@ from bidsaid.logging import setup_logger
 from bidsaid.qc import compute_n_dummy_scans, create_censor_mask
 
 from _denoising import get_acompcor_component_names
-from _utils import VALID_TASK_NAMES, _get_dataframe, embed_image
+from _utils import VALID_TASK_NAMES, _get_dataframe, embed_img
 from _report import HTMLReport
 
 LGR = setup_logger(__name__)
@@ -374,8 +374,8 @@ def create_diagnostic_condition_plots(condition_filenames_dict, tr, fd_threshold
         plots.append(
             {
                 "name": cond_name,
-                "noncensored_condition_plot": embed_image(noncensored_plot),
-                "censored_condition_plot": embed_image(censored_plot),
+                "noncensored_condition_plot": embed_img(noncensored_plot),
+                "censored_condition_plot": embed_img(censored_plot),
             }
         )
 

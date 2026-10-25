@@ -48,7 +48,7 @@ if st.button(
             [
                 x
                 for x in Path(st.session_state.bids_dir).glob("*")
-                if x.is_dir() and re.match(r"^sub-\d{5}", x.name)
+                if x.is_dir() and re.match(r"^sub-\d{2}", x.name)
             ]
         )
 

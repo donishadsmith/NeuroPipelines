@@ -123,7 +123,7 @@ from _models import (
 )
 from _utils import (
     create_beta_files,
-    embed_image,
+    embed_img,
     get_beta_names,
     get_coordinate_from_filename,
     get_first_level_gltsym_codes,
@@ -919,16 +919,16 @@ def main(
 
         report.add_context(
             deconvolve_seed_cmd=deconvolve_seed_cmd,
-            seed_timeseries_plot=embed_image(seed_timeseries_plot_filename),
-            denoised_seed_timeseries_plot=embed_image(
+            seed_timeseries_plot=embed_img(seed_timeseries_plot_filename),
+            denoised_seed_timeseries_plot=embed_img(
                 denoised_seed_timeseries_plot_filename,
             ),
             upsampled_seed_timeseries_plot=(
-                embed_image(upsampled_seed_timeseries_plot_filename)
+                embed_img(upsampled_seed_timeseries_plot_filename)
                 if upsampled_seed_timeseries_plot_filename
                 else None
             ),
-            deconvolved_seed_timeseries_plot=embed_image(
+            deconvolved_seed_timeseries_plot=embed_img(
                 deconvolved_seed_timeseries_plot_filename,
             ),
         )
@@ -1045,14 +1045,14 @@ def main(
                 {
                     "name": cond_name,
                     "do_upsample": do_upsample,
-                    "condition_regressor_plot": embed_image(
+                    "condition_regressor_plot": embed_img(
                         condition_regressor_plot_filename,
                     ),
                     "ppi_cmd": ppi_cmd.replace("  ", " "),
                     "ppi_plot": (
-                        embed_image(ppi_plot_filename) if ppi_plot_filename else None
+                        embed_img(ppi_plot_filename) if ppi_plot_filename else None
                     ),
-                    "final_ppi_plot": embed_image(final_ppi_plot_filename),
+                    "final_ppi_plot": embed_img(final_ppi_plot_filename),
                 }
             )
 

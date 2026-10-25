@@ -2,7 +2,7 @@ import argparse, json
 
 from bids import BIDSLayout
 
-from bidsaid.metadata import get_image_orientation, direction_to_voxel_axis
+from bidsaid.metadata import get_img_orientation, direction_to_voxel_axis
 
 
 def _get_cmd_args():
@@ -43,7 +43,7 @@ def main(bids_dir, phase_encoding_axis, fat_shift_direction):
     )
 
     for nifti_file in nifti_files:
-        _, orient = get_image_orientation(nifti_file)
+        _, orient = get_img_orientation(nifti_file)
         phase_axis, phase_index = direction_to_voxel_axis(
             nifti_file, phase_encoding_axis
         )

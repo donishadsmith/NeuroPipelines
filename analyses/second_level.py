@@ -9,7 +9,7 @@ from pandas.api.types import is_object_dtype, is_string_dtype
 
 from bidsaid.files import get_entity_value
 from bidsaid.logging import setup_logger
-from bidsaid.io import compress_image
+from bidsaid.io import compress_img
 from bidsaid.cli import none_or
 
 from _denoising import remove_collinear_columns
@@ -610,11 +610,11 @@ def reduce_search_space(group_mask, mask_img_path, mask_type, gm_mask_threshold=
             f"any voxel with a probability greater than {gm_mask_threshold} "
             "will be retained in the group mask."
         )
-        binarized_mask_image = resmapled_mask_img.get_fdata() > gm_mask_threshold
+        binarized_mask_img = resmapled_mask_img.get_fdata() > gm_mask_threshold
     else:
-        binarized_mask_image = resmapled_mask_img.get_fdata() != 0
+        binarized_mask_img = resmapled_mask_img.get_fdata() != 0
 
-    group_mask_data = group_mask.get_fdata() * binarized_mask_image
+    group_mask_data = group_mask.get_fdata() * binarized_mask_img
 
     return nib.nifti1.Nifti1Image(group_mask_data, group_mask.affine, group_mask.header)
 
@@ -984,9 +984,9 @@ def compute_n_permutation(glt_data_table):
     return set_permutations(true_max_permutation), true_max_permutation
 
 
-def create_mean_image(
+def create_mean_img(
     subject_temp_merged_filename,
-    subject_mean_image_filename,
+    subject_mean_img_filename,
     fsl_merge_call,
     fsl_maths_call,
     subject_files,
@@ -997,28 +997,28 @@ def create_mean_image(
         check=True,
     )
     subprocess.run(
-        f"{fsl_maths_call} {subject_temp_merged_filename} -Tmean {subject_mean_image_filename}",
+        f"{fsl_maths_call} {subject_temp_merged_filename} -Tmean {subject_mean_img_filename}",
         shell=True,
         check=True,
     )
 
     subject_temp_merged_filename.unlink()
 
-    return subject_mean_image_filename
+    return subject_mean_img_filename
 
 
-def concatenate_all_images(fsl_merge_call, concatenated_filename, files_to_merge):
+def concatenate_all_imgs(fsl_merge_call, concatenated_filename, files_to_merge):
     cmd = f"{fsl_merge_call} -t {concatenated_filename} {' '.join(files_to_merge)}"
     LGR.info(f"Concatenating images: {cmd}")
     subprocess.run(cmd, shell=True, check=True)
 
 
-def delete_images(image_filenames):
+def delete_imgs(image_filenames):
     for image_filename in image_filenames:
         Path(image_filename).unlink()
 
 
-def create_concatenated_image(
+def create_concatenated_img(
     output_dir,
     glt_data_table,
     fsl_img_path,
@@ -1065,7 +1065,7 @@ def create_concatenated_image(
             subject_only=True,
         )
 
-        subject_mean_images = []
+        subject_mean_imgs = []
 
         for subject, group in sorted_table.groupby("Subj", sort=True):
             subject_files = group["InputFile"].tolist()
@@ -1077,7 +1077,7 @@ def create_concatenated_image(
                 concatenated_filename.parent / f"temp_{prefix}_{subject}_mean.nii.gz"
             )
 
-            subject_mean_img = create_mean_image(
+            subject_mean_img = create_mean_img(
                 subject_temp_merged,
                 subject_mean_img,
                 fsl_merge_call,
@@ -1085,25 +1085,25 @@ def create_concatenated_image(
                 subject_files,
             )
 
-            subject_mean_images.append(str(subject_mean_img))
+            subject_mean_imgs.append(str(subject_mean_img))
 
             volume_records.append(
                 {
                     "Subj": subject,
                     "dose": "mean",
                     "averaged": True,
-                    "n_source_images": len(subject_files),
-                    "source_images": "|".join(map(str, subject_files)),
+                    "n_source_imgs": len(subject_files),
+                    "source_imgs": "|".join(map(str, subject_files)),
                 }
             )
 
-        concatenate_all_images(
+        concatenate_all_imgs(
             fsl_merge_call,
             concatenated_filename,
-            subject_mean_images,
+            subject_mean_imgs,
         )
 
-        delete_images(subject_mean_images)
+        delete_imgs(subject_mean_imgs)
 
     elif has_duplicate_dose_rows:
         LGR.info(
@@ -1132,7 +1132,7 @@ def create_concatenated_image(
                     / f"temp_{prefix}_{subject}_{dose}_mean.nii.gz"
                 )
 
-                subject_mean_img = create_mean_image(
+                subject_mean_img = create_mean_img(
                     subject_temp_merged,
                     subject_mean_img,
                     fsl_merge_call,
@@ -1154,18 +1154,18 @@ def create_concatenated_image(
                     "Subj": subject,
                     "dose": dose,
                     "averaged": averaged,
-                    "n_source_images": len(group_files),
-                    "source_images": "|".join(map(str, group_files)),
+                    "n_source_imgs": len(group_files),
+                    "source_imgs": "|".join(map(str, group_files)),
                 }
             )
 
-        concatenate_all_images(
+        concatenate_all_imgs(
             fsl_merge_call,
             concatenated_filename,
             images_to_concat,
         )
 
-        delete_images(temp_files)
+        delete_imgs(temp_files)
 
     else:
         sorted_table = sort_data_table(glt_data_table)
@@ -1178,12 +1178,12 @@ def create_concatenated_image(
                     "Subj": row["Subj"],
                     "dose": row["dose"],
                     "averaged": False,
-                    "n_source_images": 1,
-                    "source_images": str(row["InputFile"]),
+                    "n_source_imgs": 1,
+                    "source_imgs": str(row["InputFile"]),
                 }
             )
 
-        concatenate_all_images(
+        concatenate_all_imgs(
             fsl_merge_call,
             concatenated_filename,
             files_to_merge,
@@ -1689,7 +1689,7 @@ def main(
                     else (n_permutations, n_permutations)
                 )
 
-                concatenated_filename = create_concatenated_image(
+                concatenated_filename = create_concatenated_img(
                     output_dir,
                     glt_data_table,
                     fsl_img_path,
@@ -1721,7 +1721,7 @@ def main(
                     f"*{first_level_glt_label}*.nii"
                 ):
                     if img_path.exists():
-                        compress_image(
+                        compress_img(
                             img_path,
                             dst_dir=Path(output_prefix).parent,
                             remove_src_file=True,

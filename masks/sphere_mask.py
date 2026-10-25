@@ -15,7 +15,7 @@ from matplotlib.colors import ListedColormap
 from bidsaid._helpers import iterable_to_str
 from bidsaid.files import get_entity_value
 
-from _general_utils import _check_coordinate, _create_sphere_mask, get_template_images
+from _general_utils import _check_coordinate, _create_sphere_mask, get_template_imgs
 
 
 # https://github.com/fieldtrip/fieldtrip/blob/master/private/tal2mni.m
@@ -107,7 +107,7 @@ def run_pipeline(
 
     coordinate = list(map(float, coordinate))
 
-    template_mask_path, template_img_path = get_template_images(cohort)
+    template_mask_path, template_img_path = get_template_imgs(cohort)
 
     template_mask = nib.load(template_mask_path)
 

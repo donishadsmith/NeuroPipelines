@@ -315,7 +315,7 @@ def create_condition_label_str(beta_name):
     return condition_label
 
 
-def embed_image(image_path):
+def embed_img(image_path):
     """
     Reads the bytes from the image, then converts to base64,
     its binary-to-text encoding that uses 64 printable characters

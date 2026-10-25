@@ -79,7 +79,7 @@ def main(analysis_dir, dst_dir, cohort, task, analysis_type, cluster_correction_
     LGR.info(f"TASK: {task}")
 
     first_level_gltlabels = get_first_level_gltsym_codes(
-        cohort, task, analysis_type, caller="threshold_palm_images"
+        cohort, task, analysis_type, caller="threshold_palm_imgs"
     )
     for first_level_gltlabel in first_level_gltlabels:
         for second_level_glt_code in get_second_level_glt_codes(cohort):

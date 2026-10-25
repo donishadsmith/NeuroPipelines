@@ -9,7 +9,7 @@ import nibabel as nib
 from nilearn.plotting import plot_roi
 from matplotlib.colors import ListedColormap
 
-from _general_utils import _check_coordinate, _create_sphere_mask, get_template_images
+from _general_utils import _check_coordinate, _create_sphere_mask, get_template_imgs
 
 SERVER_URL_PATH = Path(__file__).parent.parent / "server_url.txt"
 CERT_PATH = Path(__file__).parent.parent / "cert.pem"
@@ -66,7 +66,7 @@ def run_pipeline(cohort, mni_coordinate):
     else:
         sphere_radius = None
 
-    template_mask_path, template_img_path = get_template_images(cohort)
+    template_mask_path, template_img_path = get_template_imgs(cohort)
 
     mni_coordinate = list(map(float, mni_coordinate))
 

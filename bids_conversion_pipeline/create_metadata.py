@@ -100,7 +100,7 @@ def _create_json_sidecar_pipeline(
                 slice_axis=slice_axis,
             )
 
-            _, orientation = bids_meta.get_image_orientation(nifti_file)
+            _, orientation = bids_meta.get_img_orientation(nifti_file)
             # The slice orientation is in the transverse plane and the transverse
             # slice order is from feet to head and the slice scan order is ascending.
             # The slice direction goes from Inferior -> Superior with this configuration

@@ -10,7 +10,7 @@ from bidsaid._decorators import check_nifti
 from bidsaid.io import (
     _copy_file,
     load_nifti,
-    compress_image,
+    compress_img,
     is_nifti_truncated,
     regex_glob,
 )
@@ -98,7 +98,7 @@ def _copy_nifti_files(nifti_file: Path, temp_dir: Path) -> None:
             if dst_file.exists():
                 dst_file.unlink()
         else:
-            compress_image(dst_file, dst_file.parent, remove_src_file=True)
+            compress_img(dst_file, dst_file.parent, remove_src_file=True)
 
 
 @check_nifti(nifti_param_name="nifti_file")

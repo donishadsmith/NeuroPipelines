@@ -4,7 +4,7 @@ from typing import Literal
 
 from bidsaid.io import regex_glob, get_nifti_header
 from bidsaid.logging import setup_logger
-from bidsaid.metadata import is_3d_img, infer_task_from_image
+from bidsaid.metadata import is_3d_img, infer_task_from_img
 from bidsaid.path_utils import get_file_acquisition_order, sort_by_acquisition_order
 
 LGR = setup_logger(__name__)
@@ -63,7 +63,7 @@ def _infer_file_identity(temp_dir: Path, cohort: Literal["kids", "adults"]) -> N
                     nifti_file.unlink()
                     continue
             else:
-                desc = infer_task_from_image(nifti_file, _TASK_VOLUME_MAP[cohort])
+                desc = infer_task_from_img(nifti_file, _TASK_VOLUME_MAP[cohort])
 
             if not desc:
                 LGR.info(
