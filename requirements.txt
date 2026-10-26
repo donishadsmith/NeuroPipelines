@@ -1,4 +1,4 @@
-bidsaid[all]>=0.36.1
+bidsaid[all]>=0.36.2
 numpy>=1.26.4
 pandas>=2.3.3
 openpyxl>=3.1.5
