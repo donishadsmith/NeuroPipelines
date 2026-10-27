@@ -1,0 +1,1 @@
+Scripts for the [*Your Brain On Music*](https://www.postclassical.com/concerts/2026-2027/your-brain-on-music-sound-science-and-soul/) concert at John's Hopkins University Bloomber Center on November 16-17, 2026.
