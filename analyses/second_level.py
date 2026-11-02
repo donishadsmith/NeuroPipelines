@@ -1,4 +1,4 @@
-import argparse, shutil, subprocess, sys
+import argparse, gzip, shutil, subprocess, sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -1255,6 +1255,18 @@ def perform_palm(
         / f"task-{task}_{entity_key}-{first_level_glt_label}_gltcode-{second_level_glt_code}_desc-nonparametric"
     )
 
+    uncompressed_input = Path(str(concatenated_filename).removesuffix(".gz"))
+    with gzip.open(concatenated_filename, "rb") as src, open(
+        uncompressed_input, "wb"
+    ) as dst:
+        shutil.copyfileobj(src, dst)
+
+    uncompressed_mask = output_prefix.parent / f"{output_prefix.name}_palm_mask.nii"
+    mask_img = nib.load(group_mask_filename)
+    nib.Nifti1Image(
+        (mask_img.get_fdata() != 0).astype(np.float32), mask_img.affine
+    ).to_filename(uncompressed_mask)
+
     # The corrcon flag is used to control false positive rates since the positive and negative
     # maps are combined programatically later, which doubles the fpr (i.e., 2 × 0.05 = 0.10)
     # Note that Palm also has a two-tailed; however based on source code:
@@ -1287,9 +1299,8 @@ def perform_palm(
     # one-tailed contrasts with -corrcon, which corrects fwer across both contrasts, and merge the results
     # into a single bidirectional t-stat map.
     palm_flags = (
-        "-noniiclass "
-        f"-i {concatenated_filename} "
-        f"-m {group_mask_filename} "
+        f"-i {uncompressed_input} "
+        f"-m {uncompressed_mask} "
         f"-d {design_matrix_file} "
         f"-t {contrast_matrix_file} "
         f"-n {n_permutations} "
@@ -1314,11 +1325,15 @@ def perform_palm(
     else:
         cmd = (
             f"apptainer exec -B /projects:/projects {fsl_img_path} "
-            f"octave --eval 'palm {palm_flags}'"
+            f"octave --eval 'palm -noniiclass {palm_flags}'"
         )
 
     LGR.info(f"Running PALM for {second_level_glt_code}: {cmd}")
-    subprocess.run(cmd, shell=True, check=True)
+    try:
+        subprocess.run(cmd, shell=True, check=True)
+    finally:
+        uncompressed_input.unlink(missing_ok=True)
+        uncompressed_mask.unlink(missing_ok=True)
 
     return str(output_prefix), cmd
 
