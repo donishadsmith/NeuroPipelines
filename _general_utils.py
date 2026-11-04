@@ -2,9 +2,7 @@ import tempfile, re
 from pathlib import Path
 from typing import Optional
 
-import nibabel as nib, numpy as np, pandas as pd
-from nilearn.masking import _unmask_3d
-from nilearn.maskers import nifti_spheres_masker
+import pandas as pd
 
 from bidsaid.path_utils import is_valid_date
 from bidsaid.logging import setup_logger
@@ -267,23 +265,3 @@ def get_template_imgs(cohort):
         COHORT_MAP[cohort]["template_mask_path"],
         COHORT_MAP[cohort]["template_img_path"],
     )
-
-
-def _create_sphere_mask(coordinate, sphere_radius, template_mask):
-    # https://neurostars.org/t/create-a-10mm-sphere-roi-mask-around-a-given-coordinate/28853/3
-    _, A = nifti_spheres_masker.apply_mask_and_get_affinity(
-        seeds=[tuple(coordinate)],
-        niimg=None,
-        radius=sphere_radius,
-        allow_overlap=False,
-        mask_img=template_mask,
-    )
-
-    sphere_mask = _unmask_3d(
-        X=A.toarray().flatten(), mask=template_mask.get_fdata().astype(bool)
-    ).astype(np.int8)
-
-    hdr = template_mask.header.copy()
-    hdr.set_data_dtype(np.int8)
-
-    return nib.nifti1.Nifti1Image(sphere_mask, template_mask.affine, hdr)

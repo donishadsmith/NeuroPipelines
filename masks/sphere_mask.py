@@ -14,8 +14,9 @@ from matplotlib.colors import ListedColormap
 
 from bidsaid._helpers import iterable_to_str
 from bidsaid.files import get_entity_value
+from bidsaid.masking import create_sphere_mask
 
-from _general_utils import _check_coordinate, _create_sphere_mask, get_template_imgs
+from _general_utils import _check_coordinate, get_template_imgs
 
 
 # https://github.com/fieldtrip/fieldtrip/blob/master/private/tal2mni.m
@@ -124,7 +125,7 @@ def run_pipeline(
     sphere_filename = (Path(dst_dir) if dst_dir else Path().home()) / sphere_name
     sphere_filename.parent.mkdir(parents=True, exist_ok=True)
 
-    sphere_mask = _create_sphere_mask(coordinate, sphere_radius, template_mask)
+    sphere_mask = create_sphere_mask(coordinate, sphere_radius, template_mask)
     nib.save(sphere_mask, sphere_filename)
 
     display = plot_roi(

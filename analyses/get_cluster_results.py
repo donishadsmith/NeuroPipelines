@@ -3,8 +3,6 @@ from pathlib import Path
 
 import nibabel as nib, numpy as np, pandas as pd
 from nilearn.image import threshold_img
-from nilearn.masking import _unmask_3d
-from nilearn.maskers import nifti_spheres_masker
 from nilearn.plotting import plot_stat_map, plot_roi
 from nilearn.reporting import get_clusters_table
 from matplotlib.colors import ListedColormap
@@ -12,6 +10,7 @@ from scipy.stats import norm
 
 from bidsaid.logging import setup_logger
 from bidsaid.parsers import _is_float
+from bidsaid.masking import create_sphere_mask
 
 from _report import HTMLReport
 from _utils import (
@@ -475,24 +474,7 @@ def create_seed_masks(
     for index in truncated_clusters_table.index.to_list():
         coord = truncated_clusters_table.loc[index, ["X", "Y", "Z"]].to_list()
 
-        # https://neurostars.org/t/create-a-10mm-sphere-roi-mask-around-a-given-coordinate/28853/3
-        _, A = nifti_spheres_masker.apply_mask_and_get_affinity(
-            seeds=[tuple(coord)],
-            niimg=None,
-            radius=sphere_radius,
-            allow_overlap=False,
-            mask_img=template_mask,
-        )
-
-        sphere_mask = _unmask_3d(
-            X=A.toarray().flatten(), mask=template_mask.get_fdata().astype(bool)
-        ).astype(np.int8)
-
-        hdr = template_mask.header.copy()
-        hdr.set_data_dtype(np.int8)
-
-        sphere_mask = nib.nifti1.Nifti1Image(sphere_mask, template_mask.affine, hdr)
-        sphere_mask = resample_seed_img(sphere_mask, thresholded_img)
+        sphere_mask = create_sphere_mask(tuple(coord), sphere_radius, template_mask)
 
         coord_name = "_".join([str(x) for x in coord])
         sphere_name = (
