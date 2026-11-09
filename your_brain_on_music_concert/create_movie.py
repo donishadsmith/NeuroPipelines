@@ -1,7 +1,7 @@
-import argparse, re
+import argparse, re, json
 from pathlib import Path
 
-import numpy as np
+import nibabel as nib
 
 from bidsaid.cli import none_or
 from bidsaid.files import get_entity_value
@@ -11,12 +11,7 @@ from bidsaid.surface import (
     fetch_fsaverage_surfaces,
     get_cortex_masks,
 )
-from bidsaid.qc import (
-    zscore_to_reference,
-    interpolate_censored_img,
-    find_outlier_volumes,
-)
-from bidsaid.metadata import get_tr
+from bidsaid.io import load_nifti, NiftiFileorImage
 from bidsaid.visual import SurfaceRenderer
 from bidsaid.movie import (
     MovieWriter,
@@ -35,7 +30,7 @@ SUB_TO_NAME = {
 
 def _get_cmd_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Create surface movies of denoised TASK_A data z-scored against the TASK_B baseline."
+        description="Create surface movies of denoised TASK_A data z-scored against the TASK_B baseline. Assumes both tasks have the same TR."
     )
     parser.add_argument(
         "--denoised_dir",
@@ -179,7 +174,7 @@ def _get_cmd_args() -> argparse.ArgumentParser:
     parser.add_argument(
         "--hemisphere_spacing",
         dest="hemisphere_spacing",
-        default=180,
+        default=200,
         type=int,
         required=False,
         help="Width in pixels of the empty space between the left and right hemisphere panels",
@@ -199,18 +194,6 @@ def _get_cmd_args() -> argparse.ArgumentParser:
         type=int,
         required=False,
         help=" Height in pixels of the empty space between the participant rows of a movie",
-    )
-    parser.add_argument(
-        "--outlier_threshold",
-        dest="outlier_threshold",
-        default=5.0,
-        type=none_or(float),
-        required=False,
-        help=(
-            "Volumes whose overall signal is this many robust standard deviations above the run's typical level "
-            "(e.g. dummy scans or motion spikes) are replaced by interpolating from neighboring volumes, so the "
-            "movie keeps its length and timing. Use 'none' to turn this off (default: 5.0)."
-        ),
     )
 
     return parser
@@ -244,32 +227,38 @@ def find_denoised_files(
     return files_by_subject
 
 
-def remove_outlier_volumes(
-    zscored_img, subject_id: str, tr: float, threshold: float | None
-):
-    """Replace outlier volumes with values interpolated from the neighboring volumes."""
-    if threshold is None:
-        return zscored_img
+def create_difference_run(
+    subject_id: str,
+    task_a_file: NiftiFileorImage,
+    task_b_file: NiftiFileorImage,
+) -> nib.nifti1.Nifti1Image:
+    task_a_nifti = load_nifti(task_a_file)
+    task_b_nifti = load_nifti(task_b_file)
+    task_a_len = task_a_nifti.shape[-1]
+    task_b_len = task_b_nifti.shape[-1]
 
-    outliers, level = find_outlier_volumes(zscored_img, threshold)
-    if not outliers.any():
-        LGR.info(f"{subject_id}: no outlier volumes found.")
-        return zscored_img
-
-    if outliers.all():
+    if task_a_len != task_b_len:
+        max_volumes = min(task_a_len, task_b_len)
         LGR.warning(
-            f"{subject_id}: every volume was flagged as an outlier, leaving the data unchanged."
+            f"{subject_id}: the length of {task_a_file} ({task_a_len}) and {task_b_file} ({task_b_len}) "
+            f"differ, truncating to {max_volumes} volumes."
         )
-        return zscored_img
 
-    details = ", ".join(
-        f"volume {index} (t = {index * tr:.1f} s, level {level[index]:.2f} vs typical {np.median(level):.2f})"
-        for index in np.flatnonzero(outliers)
-    )
-    LGR.warning(f"{subject_id}: replacing outlier volumes by interpolation: {details}")
+        task_a_nifti = nib.nifti1.Nifti1Image(
+            task_a_nifti.get_fdata()[..., :max_volumes],
+            task_a_nifti.affine,
+            task_a_nifti.header,
+        )
+        task_b_nifti = nib.nifti1.Nifti1Image(
+            task_b_nifti.get_fdata()[..., :max_volumes],
+            task_b_nifti.affine,
+            task_b_nifti.header,
+        )
 
-    return interpolate_censored_img(
-        zscored_img, (~outliers).astype(np.uint8), method="pchip", extrapolate=True
+    return nib.nifti1.Nifti1Image(
+        task_a_nifti.get_fdata() - task_b_nifti.get_fdata(),
+        task_a_nifti.affine,
+        task_a_nifti.header,
     )
 
 
@@ -283,7 +272,6 @@ def main(
     interpolation_method,
     fps,
     playback_speed,
-    outlier_threshold,
     threshold,
     cmap,
     fwhm,
@@ -333,23 +321,25 @@ def main(
         tasks = list(task_files)
         LGR.info(f"Task A: {tasks[0]}; Task B: {tasks[1]}")
 
-        zscored_img = remove_outlier_volumes(
-            zscore_to_reference(task_files[tasks[0]], task_files[tasks[1]]),
-            subject_id,
-            get_tr(task_files[tasks[0]]),
-            outlier_threshold,
+        difference_img = create_difference_run(
+            subject_id, task_files[tasks[0]], task_files[tasks[1]]
         )
+
+        with open(
+            str(task_files[tasks[0]]).replace("nii.gz", "json"), "r", encoding="utf-8"
+        ) as file:
+            tr = json.load(file)["RepetitionTime"]
 
         surface_runs.append(
             create_surface_run(
-                zscored_img,
+                difference_img,
                 surfaces["pial"],
                 surfaces["white"],
                 cortex_masks=cortex_masks,
                 fwhm=fwhm,
                 temporal_sigma=sigma,
                 subject_id=subject_id,
-                tr=get_tr(task_files[tasks[0]]),
+                tr=tr,
                 name=SUB_TO_NAME.get(subject_id),
                 task_name=f"{tasks[0]}_minus_{tasks[1]}",
                 n_interpolated_frames=n_interpolated_frames,
@@ -385,7 +375,7 @@ def main(
         zoom=zoom,
         cmap=cmap,
         color_range=(-1, 1),
-        threshold=(0.5, 0.7),
+        # threshold=(0.3, 0.5),
         zero_transparent=False,
         background="black",
         label_font_size=label_font_size,
@@ -401,7 +391,7 @@ def main(
             target_fps=fps,
             playback_speed=playback_speed,
             subject_spacing=subject_spacing,
-            label_format="{subject_id}",
+            label_format="{subject_name}",
         ).write(dst_dir)
 
 

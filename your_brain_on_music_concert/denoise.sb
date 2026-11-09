@@ -38,7 +38,6 @@ TEMPLATE_SPACE=${TEMPLATE_SPACE:-"MNI152NLin2009cAsym_res-2"}
 MOTION=${MOTION:-"basic"}                                      # Choose "basic", "power2", "derivatives", "full"
 COMPCOR=${COMPCOR:-"anat_separated"}                           # Choose "anat_combined" or "anat_separated"
 N_COMPCOR=${N_COMPCOR:-5}                                      # Components per mask when "anat_separated"
-FD_THRESHOLD=${FD_THRESHOLD:-"None"}                           # Float in mm (e.g. 0.5) or "None" to only censor non-steady-state volumes
 
 SUBJECTS=( $@ )
 
@@ -56,8 +55,7 @@ CMD="$PYTHON denoise.py \
 	--space $TEMPLATE_SPACE \
 	--motion $MOTION \
 	--compcor $COMPCOR \
-	--n_compcor $N_COMPCOR \
-	--fd_threshold $FD_THRESHOLD"
+	--n_compcor $N_COMPCOR"
 
 echo Hostname: $(hostname)
 echo ID: $(id)

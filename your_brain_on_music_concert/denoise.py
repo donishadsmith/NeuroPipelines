@@ -1,22 +1,27 @@
+"""
+Simple denoising of fMRIPrep outputs.
+
+Confounds are selected with nilearn's ``load_confounds`` and regressed out with ``clean_img``:
+    - Motion parameters (default: "full", 24 parameters).
+    - Cosine regressors from fMRIPrep (high-pass filtering). These are always included since
+      fMRIPrep computes aCompCor on high-pass filtered data.
+    - aCompCor components (default: "anat_separated" with 5 components per WM and CSF mask).
+
+Non-steady-state volumes are removed with the sample mask returned by ``load_confounds`` and
+each voxel is z-scored. Denoised images are saved in the destination directory, mirroring the
+fMRIPrep directory structure, with "desc-preproc_bold" replaced by "desc-denoised_bold".
+"""
+
 import argparse, json
 from pathlib import Path
 
-import bids, nibabel as nib, numpy as np, pandas as pd
-from nilearn.interfaces.fmriprep import load_confounds
-
+import bids, nibabel as nib, numpy as np
 from bidsaid.logging import setup_logger
 from bidsaid.metadata import get_tr
-from bidsaid.cli import none_or
-from bidsaid.qc import (
-    compute_n_dummy_scans,
-    create_censor_mask,
-    interpolate_censored_img,
-    regress_confounds,
-)
+from nilearn.image import clean_img
+from nilearn.interfaces.fmriprep import load_confounds
 
 LGR = setup_logger(__name__)
-
-TRUNCATION_DURATIONS = {"music": 328}
 
 
 def _get_cmd_args():
@@ -36,8 +41,8 @@ def _get_cmd_args():
         help="The destination (output) directory for the denoised images.",
     )
     parser.add_argument(
-        "--subject_id",
-        dest="subject_id",
+        "--subject",
+        dest="subject",
         required=True,
         help="Subject ID without the 'sub-' entity.",
     )
@@ -82,18 +87,6 @@ def _get_cmd_args():
         required=False,
         help="Number of aCompCor components (per mask when using 'anat_separated').",
     )
-    parser.add_argument(
-        "--fd_threshold",
-        dest="fd_threshold",
-        default=None,
-        type=none_or(float),
-        required=False,
-        help=(
-            "Framewise displacement threshold (mm) for censoring high motion volumes. "
-            "Non-steady-state volumes are always censored. Set to 'None' to only censor "
-            "non-steady-state volumes."
-        ),
-    )
 
     return parser
 
@@ -129,17 +122,6 @@ def _get_mask_file(nifti_file):
     return mask_file
 
 
-def _get_confounds_file(nifti_file):
-    nifti_file = Path(nifti_file)
-    confounds_file = nifti_file.parent / (
-        nifti_file.name.split("_space-")[0] + "_desc-confounds_timeseries.tsv"
-    )
-    if not confounds_file.exists():
-        raise FileNotFoundError(f"No confounds file found for {nifti_file.name}.")
-
-    return confounds_file
-
-
 def _create_dataset_description(dst_dir):
     dataset_description = {
         "Name": "Denoised fMRIPrep Outputs",
@@ -154,142 +136,76 @@ def _create_dataset_description(dst_dir):
         pass
 
 
-def _get_n_volumes_to_keep(task, tr, n_volumes):
-    if task not in TRUNCATION_DURATIONS:
-        return None
-
-    n_keep = int(round(TRUNCATION_DURATIONS[task] / tr))
-    if n_keep >= n_volumes:
-        return None
-
-    LGR.info(
-        f"Truncating task {task} from {n_volumes} to {n_keep} volumes "
-        f"({TRUNCATION_DURATIONS[task]} seconds at TR={tr})."
-    )
-
-    return n_keep
-
-
-def _get_censor_mask(nifti_file, n_volumes, fd_threshold, n_keep=None):
-    confounds_tsv_df = pd.read_csv(_get_confounds_file(nifti_file), sep="\t").fillna(0)
-    n_dummy_scans = compute_n_dummy_scans(confounds_tsv_df)
-    censor_mask = create_censor_mask(
-        confounds_tsv_df,
-        column_name="framewise_displacement",
-        threshold=fd_threshold,
-        n_dummy_scans=n_dummy_scans,
-    ).astype(np.int8)
-
-    if censor_mask.size != n_volumes:
-        raise ValueError(
-            f"Censor mask has {censor_mask.size} values but {Path(nifti_file).name} "
-            f"has {n_volumes} volumes."
-        )
-
-    if n_keep is not None:
-        censor_mask = censor_mask[:n_keep]
-
-    if not censor_mask.any():
-        raise ValueError(f"All volumes are censored for {Path(nifti_file).name}.")
-
-    return censor_mask, n_dummy_scans
-
-
-def denoise_nifti_img(nifti_file, task, motion, compcor, n_compcor, fd_threshold):
-    confounds_df, _ = load_confounds(
+def denoise_nifti(nifti_file, motion, compcor, n_compcor):
+    confounds_df, sample_mask = load_confounds(
         str(nifti_file),
         strategy=("motion", "high_pass", "compcor"),
         motion=motion,
         compcor=compcor,
         n_compcor=n_compcor,
-        demean=False,
+        demean=True,
     )
-
-    tr = get_tr(nifti_file)
-    raw_img = nib.load(nifti_file)
-    n_original_volumes = raw_img.shape[-1]
-
-    n_keep = _get_n_volumes_to_keep(task, tr, n_original_volumes)
-    if n_keep is not None:
-        raw_img = raw_img.slicer[..., :n_keep]
-        confounds_df = confounds_df.iloc[:n_keep].reset_index(drop=True)
-
-    n_volumes = raw_img.shape[-1]
     LGR.info(f"Using the following confounds: {list(confounds_df.columns)}")
 
-    censor_mask, n_dummy_scans = _get_censor_mask(
-        nifti_file, n_original_volumes, fd_threshold, n_keep
-    )
-    censored_volumes = np.flatnonzero(censor_mask == 0).tolist()
-    LGR.info(
-        f"Censoring {len(censored_volumes)} volumes ({n_dummy_scans} non-steady-state): "
-        f"{censored_volumes}"
+    n_volumes = nib.load(nifti_file).shape[-1]
+    n_removed_volumes = 0 if sample_mask is None else n_volumes - len(sample_mask)
+    LGR.info(f"Number of non-steady-state volumes removed: {n_removed_volumes}")
+
+    tr = get_tr(nifti_file)
+    denoised_img = clean_img(
+        str(nifti_file),
+        confounds=confounds_df,
+        detrend=False,
+        standardize="zscore_sample",
+        t_r=tr,
+        mask_img=_get_mask_file(nifti_file),
     )
 
-    denoised_img = regress_confounds(
-        raw_img, confounds_df, censor_mask, _get_mask_file(nifti_file)
-    )
-
-    if censored_volumes:
-        denoised_img = interpolate_censored_img(
-            denoised_img, censor_mask, method="cubic", extrapolate=True
-        )
-
-    hdr = raw_img.header.copy()
-    hdr.set_data_dtype(np.float32)
     denoised_img = nib.Nifti1Image(
         np.asanyarray(denoised_img.dataobj, dtype=np.float32),
-        raw_img.affine,
-        hdr,
+        denoised_img.affine,
+        denoised_img.header,
     )
+    denoised_img.header.set_data_dtype(np.float32)
     denoised_img.header.set_zooms(denoised_img.header.get_zooms()[:3] + (tr,))
+    denoised_img.header.set_xyzt_units("mm", "sec")
 
     metadata = {
         "RepetitionTime": tr,
         "Confounds": list(confounds_df.columns),
-        "FramewiseDisplacementThreshold": fd_threshold,
-        "NumberOfNonSteadyStateVolumes": n_dummy_scans,
-        "CensoredVolumes": censored_volumes,
-        "NumberOfVolumesInterpolated": len(censored_volumes),
-        "NumberOfVolumes": n_volumes,
-        "NumberOfOriginalVolumes": n_original_volumes,
-        "Truncated": n_keep is not None,
-        "Standardize": "None",
+        "NumberOfVolumesRemoved": n_removed_volumes,
+        "Standardize": "zscore_sample",
     }
 
     return denoised_img, metadata
 
 
-def main(
-    src_dir, dst_dir, subject_id, tasks, space, motion, compcor, n_compcor, fd_threshold
-):
-    subject_id = str(subject_id).removeprefix("sub-")
+def main(src_dir, dst_dir, subject, tasks, space, motion, compcor, n_compcor):
+    subject = str(subject).removeprefix("sub-")
     src_dir = Path(src_dir).resolve()
-    dst_dir = Path(dst_dir).resolve()
-    dst_dir.mkdir(parents=True, exist_ok=True)
+    Path(dst_dir).mkdir(parents=True, exist_ok=True)
     _create_dataset_description(dst_dir)
 
     layout = _get_layout(src_dir)
-    tasks = tasks or layout.get(subject=subject_id, target="task", return_type="id")
+    tasks = tasks or layout.get(subject=subject, target="task", return_type="id")
     if not tasks:
-        LGR.critical(f"No tasks found for subject {subject_id}.")
-        return
+        LGR.critical(f"No tasks found for subject {subject}.")
 
     for task in tasks:
-        nifti_files = _get_nifti_files(layout, subject_id, task, space)
+        nifti_files = _get_nifti_files(layout, subject, task, space)
         if not nifti_files:
             LGR.critical(
-                f"No NIfTI files for subject {subject_id}, task {task}, space {space}."
+                f"No NIfTI files for subject {subject}, task {task}, space {space}."
             )
             continue
 
         for nifti_file in nifti_files:
             LGR.info(f"Denoising: {nifti_file}")
-            denoised_img, metadata = denoise_nifti_img(
-                nifti_file, task, motion, compcor, n_compcor, fd_threshold
+            denoised_img, metadata = denoise_nifti(
+                nifti_file, motion, compcor, n_compcor
             )
 
-            subject_dir = dst_dir / Path(nifti_file).relative_to(src_dir).parent
+            subject_dir = Path(dst_dir) / Path(nifti_file).relative_to(src_dir).parent
             subject_dir.mkdir(parents=True, exist_ok=True)
 
             denoised_nifti_file = subject_dir / Path(nifti_file).name.replace(
@@ -305,6 +221,6 @@ def main(
 
 
 if __name__ == "__main__":
-    cmd_args = _get_cmd_args()
-    args = cmd_args.parse_args()
+    _get_cmd_args = _get_cmd_args()
+    args = _get_cmd_args.parse_args()
     main(**vars(args))

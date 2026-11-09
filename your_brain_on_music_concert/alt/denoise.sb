@@ -1,0 +1,75 @@
+#!/bin/bash
+#SBATCH --job-name=denoise
+#SBATCH --partition=cpu
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --time=02:00:00
+# Outputs -------------------------------------------------------------------------
+#SBATCH --output=denoise_%A_%a.out
+#SBATCH --error=denoise_%A_%a.err
+# ----------------------------------------------------------------------------------
+BAD_NODES_FILE="bad_nodes_${SLURM_ARRAY_JOB_ID}.txt"
+
+if ! getent passwd $(id -u) > /dev/null 2>&1; then
+    echo $(hostname) >> $BAD_NODES_FILE
+    sort -u -o $BAD_NODES_FILE $BAD_NODES_FILE
+    echo "Can't determine user account information on $(hostname). Requeueing job"
+    SCONTROL_STRING="update JobId=${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID} ExcNodeList=$(paste -sd, $BAD_NODES_FILE)"
+    scontrol requeue ${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
+    scontrol $SCONTROL_STRING
+    exit 0
+fi
+
+# sbatch --array=0-1 denoise.sb          # values map to SLURM_ARRAY_TASK_ID for indexing subject array
+# sbatch --array=0-1 denoise.sb 01 02    # specific subjects
+
+FMRIPREP_VERSION=${FMRIPREP_VERSION:-"25.2.3"}
+
+SRC_DIR=${SRC_DIR:-"/projects/bigos_lab/music-study/adults/dset/derivatives/fmriprep-$FMRIPREP_VERSION"}  # Source: fMRIPrep derivatives
+DST_DIR=${DST_DIR:-"/projects/bigos_lab/music-study/adults/dset/derivatives/denoised"}                     # Destination: denoised images
+mkdir -p $DST_DIR
+
+PYTHON="/projects/bigos_lab/envs/py313/bin/python"
+
+TASKS=${TASKS:-"rest music"}                                   # Space separated task names, "music" is truncated to 326 seconds
+TEMPLATE_SPACE=${TEMPLATE_SPACE:-"MNI152NLin2009cAsym_res-2"}
+MOTION=${MOTION:-"basic"}                                      # Choose "basic", "power2", "derivatives", "full"
+COMPCOR=${COMPCOR:-"anat_separated"}                           # Choose "anat_combined" or "anat_separated"
+N_COMPCOR=${N_COMPCOR:-5}                                      # Components per mask when "anat_separated"
+FD_THRESHOLD=${FD_THRESHOLD:-"None"}                           # Float in mm (e.g. 0.5) or "None" to only censor non-steady-state volumes
+
+SUBJECTS=( $@ )
+
+if [ ${#SUBJECTS[@]} -eq 0 ]; then
+    mapfile -t SUBJECTS < <(find "$SRC_DIR" -maxdepth 1 -type d -name "sub-*" -printf "%f\n" | sort)
+fi
+
+SUBJECT=${SUBJECTS[${SLURM_ARRAY_TASK_ID:-0}]}
+
+CMD="$PYTHON denoise.py \
+	--src_dir $SRC_DIR \
+	--dst_dir $DST_DIR \
+	--subject_id ${SUBJECT#sub-} \
+	--tasks $TASKS \
+	--space $TEMPLATE_SPACE \
+	--motion $MOTION \
+	--compcor $COMPCOR \
+	--n_compcor $N_COMPCOR \
+	--fd_threshold $FD_THRESHOLD"
+
+echo Hostname: $(hostname)
+echo ID: $(id)
+getent passwd $(id -u)
+
+echo Subject: ${SUBJECT#sub-}
+
+echo Task ID: $SLURM_ARRAY_TASK_ID
+echo Commandline: $CMD
+eval $CMD
+EXITCODE=$?
+
+echo Exit Code: $EXITCODE
+date
+exit $EXITCODE
