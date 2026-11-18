@@ -8,8 +8,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import nibabel as nib
 from nilearn.plotting import plot_roi
 from matplotlib.colors import ListedColormap
-
-from _general_utils import _check_coordinate, _create_sphere_mask, get_template_imgs
+from bidsaid.masking import create_sphere_mask
+from _general_utils import _check_coordinate, get_template_imgs
 
 SERVER_URL_PATH = Path(__file__).parent.parent / "server_url.txt"
 CERT_PATH = Path(__file__).parent.parent / "cert.pem"
@@ -71,7 +71,7 @@ def run_pipeline(cohort, mni_coordinate):
     mni_coordinate = list(map(float, mni_coordinate))
 
     if sphere_radius:
-        sphere_mask = _create_sphere_mask(
+        sphere_mask = create_sphere_mask(
             mni_coordinate, sphere_radius, nib.load(template_mask_path)
         )
 
