@@ -2,12 +2,6 @@
 
 Neuroimaging pipelines tailored for specific tasks and scan protocols in a multi-session, pharmacological fMRI study.
 
-**Requires Python 3.10+**
-
-[Get Python 3.13 on Windows Store](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=US&ocid=pdpshare)
-
-[Get Python 3.13 on Python.org](https://www.python.org/downloads/release/python-31313/)
-
 ## Available Tools
 
 - BIDS conversion
@@ -19,7 +13,22 @@ Neuroimaging pipelines tailored for specific tasks and scan protocols in a multi
 - Organizing NIH toolbox data
 - Lookup brain regions for MNI coordinates
 
+## No Installation (Windows Only)
+This option doesn't require an explicit download of Python3.10 + or any prior installation since the Python interpreter and other packages are bundled in the executable, so just:
+
+- [Download NeuroPipelines Executable Build](https://github.com/donishadsmith/NeuroPipelines/releases/latest/download/NeuroPipelines-windows.zip)
+- Extract contents from the Zip and double click on "NeuroPipelines.exe"
+- If Windows Defender complains about an unrecognized app then click "More Info" then click "Run anyway"
+
+*Note: first launch of pages will be slow as the cache for imports isnt built until the first launch of a page*
+
 ## Installation
+
+**Requires Python 3.10+**
+
+[Get Python 3.13 on Windows Store](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=US&ocid=pdpshare)
+
+[Get Python 3.13 on Python.org](https://www.python.org/downloads/release/python-31313/)
 
 Clone the repository:
 

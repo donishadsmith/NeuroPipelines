@@ -357,7 +357,7 @@ def _create_gng_events_files(
 
             mask = event_df["trial_type"].str.fullmatch(r".*Nogo.*")
             final_number = [
-                int(re.search("(\d+(;)?)$", x).group(1).rstrip(";"))
+                int(re.search(r"(\d+(;)?)$", x).group(1).rstrip(";"))
                 for x in events["trial_type"]
             ]
             event_df.loc[mask, "n_preceeding_go_trials"] = np.array(final_number)[mask]
