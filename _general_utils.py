@@ -1,4 +1,4 @@
-import tempfile, re
+import csv, tempfile, re
 from pathlib import Path
 from typing import Optional
 
@@ -265,3 +265,10 @@ def get_template_imgs(cohort):
         COHORT_MAP[cohort]["template_mask_path"],
         COHORT_MAP[cohort]["template_img_path"],
     )
+
+
+def guess_delimiter(file: str | Path):
+    with open(file, "r") as f:
+        sep = csv.Sniffer().sniff(f.readline()).delimiter
+
+    return sep
