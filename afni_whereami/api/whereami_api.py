@@ -15,17 +15,39 @@ https://github.com/fastapi/fastapi/discussions/14783
 
 import subprocess
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
 
 
+class Coordinate(BaseModel):
+    x: int
+    y: int
+    z: int
+
+
 @app.post("/")
-def whereami(request_data: dict):
-    cmd = (
-        f"podman run localhost/afni whereami "
-        f"{request_data['x']} {request_data['y']} {request_data['z']} "
-        f"-lpi -space MNI_2009c_asym -atlas FS.afni.MNI2009c_asym -atlas Brodmann_Pijn_AFNI"
+def whereami(coordinate: Coordinate):
+    output = subprocess.run(
+        [
+            "podman",
+            "run",
+            "--rm",
+            "localhost/afni",
+            "whereami",
+            str(coordinate.x),
+            str(coordinate.y),
+            str(coordinate.z),
+            "-lpi",
+            "-space",
+            "MNI_2009c_asym",
+            "-atlas",
+            "FS.afni.MNI2009c_asym",
+            "-atlas",
+            "Brodmann_Pijn_AFNI",
+        ],
+        capture_output=True,
+        text=True,
     )
-    output = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
     return {"output": output.stdout}

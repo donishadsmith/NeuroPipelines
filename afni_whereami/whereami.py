@@ -2,17 +2,14 @@ import requests, re, sys
 from functools import lru_cache
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import nibabel as nib
 from nilearn.plotting import plot_roi
 from matplotlib.colors import ListedColormap
 from bidsaid.masking import create_sphere_mask
 from _general_utils import _check_coordinate, get_template_imgs
 
-SERVER_URL_PATH = Path(__file__).parent.parent / "server_url.txt"
-CERT_PATH = Path(__file__).parent.parent / "cert.pem"
+SERVER_URL_PATH = Path(__file__).parent / "client" / "server_url.txt"
+CERT_PATH = Path(__file__).parent / "client" / "cert.pem"
 
 
 def get_server():
@@ -25,14 +22,15 @@ def get_server():
 # CLI path will still repeatedly send requests to server but Streamlit path
 # is most likely to be used
 @lru_cache(maxsize=1024)
-def query_afni(x, y, z, server_url):
+def query_afni(x, y, z):
     request_data = {
         "x": x,
         "y": y,
         "z": z,
     }
+
     # Verification is overkill but good practice
-    response = requests.post(f"{server_url}/", json=request_data, verify=CERT_PATH)
+    response = requests.post(f"{get_server()}/", json=request_data, verify=CERT_PATH)
 
     return response.json()["output"]
 
@@ -41,9 +39,7 @@ def run_pipeline(cohort, mni_coordinate):
     _check_coordinate(mni_coordinate)
 
     # public ip is reserved but just in case it changes, add in signature
-    response = query_afni(
-        mni_coordinate[0], mni_coordinate[1], mni_coordinate[2], get_server()
-    )
+    response = query_afni(mni_coordinate[0], mni_coordinate[1], mni_coordinate[2])
     output_text = [x.strip() for x in response.split("\n")]
     target_str = "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation"
 

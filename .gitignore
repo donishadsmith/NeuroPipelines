@@ -1,6 +1,4 @@
 __pycache__/
 .DS_Store
-server_url.txt
 *.key
-*.pem
 *.pub
