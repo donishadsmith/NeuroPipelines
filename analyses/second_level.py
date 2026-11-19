@@ -1480,11 +1480,12 @@ def main(
         LGR.info(f"FIRST LEVEL GLTLABEL: {first_level_glt_label}")
 
         beta_files = get_beta_files(analysis_dir, task, first_level_glt_label)
-        all_subjects = set(get_subjects(beta_files))
         beta_files = exclude_beta_files(
             beta_files,
             exclude_niftis_file,
         )
+        all_subjects = set(get_subjects(beta_files))
+
         if not beta_files:
             LGR.warning(f"No beta files found for {first_level_glt_label}")
             continue

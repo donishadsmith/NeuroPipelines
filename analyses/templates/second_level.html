@@ -59,13 +59,13 @@
         <tr><th>Parameter</th><th></th></tr>
         <tr><td>First level contrast</td><td>{{ first_level_glt_label }}</td></tr>
         <tr><td>Method</td><td>{{ method }}</td></tr>
-        <tr><td>Total beta files available</td><td>{{ n_beta_files }}</td></tr>
-        <tr><td>Number of unique subjects</td><td>{{ n_subjects }}</td></tr>
         {% if excluded_subjects %}
         <tr><td>Excluded subjects due to missing data in any of the following columns: {{ important_columns | join(", ") }}</td><td>{{ excluded_subjects | join(", ") }}</td></tr>
         {% endif %}
-        <tr><td>Sample size by dose</td><td>{{ dose_sample_sizes }}</td></tr>
-        <tr><td>Subjects by number of doses</td><td>{{ subject_dose_sample_sizes }}</td></tr>
+        <tr><td>Total beta files available (after exclusion)</td><td>{{ n_beta_files }}</td></tr>
+        <tr><td>Number of unique subjects (after exclusion)</td><td>{{ n_subjects }}</td></tr>
+        <tr><td>Sample size by dose (after exclusion)</td><td>{{ dose_sample_sizes }}</td></tr>
+        <tr><td>Subjects by number of doses (after exclusion)</td><td>{{ subject_dose_sample_sizes }}</td></tr>
     </table>
 </div>
 
