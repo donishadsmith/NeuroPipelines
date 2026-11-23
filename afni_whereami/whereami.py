@@ -1,11 +1,12 @@
-import requests, re, sys
+import requests, re
 from functools import lru_cache
 from pathlib import Path
 
-import nibabel as nib
+import nibabel as nib, matplotlib.pyplot as plt
 from nilearn.plotting import plot_roi
 from matplotlib.colors import ListedColormap
 from bidsaid.masking import create_sphere_mask
+from bidsaid.files import get_entity_value
 from _general_utils import _check_coordinate, get_template_imgs
 
 SERVER_URL_PATH = Path(__file__).parent / "client" / "server_url.txt"
@@ -35,7 +36,7 @@ def query_afni(x, y, z):
     return response.json()["output"]
 
 
-def run_pipeline(cohort, mni_coordinate):
+def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
     _check_coordinate(mni_coordinate)
 
     # public ip is reserved but just in case it changes, add in signature
@@ -63,28 +64,42 @@ def run_pipeline(cohort, mni_coordinate):
         sphere_radius = None
 
     template_mask_path, template_img_path = get_template_imgs(cohort)
+    tpl = get_entity_value(template_mask_path, "tpl", return_entity_prefix=True)
+    res = get_entity_value(template_mask_path, "res", return_entity_prefix=True)
 
     mni_coordinate = list(map(float, mni_coordinate))
 
+    sphere_filename = None
+    figure = None
     if sphere_radius:
         sphere_mask = create_sphere_mask(
             mni_coordinate, sphere_radius, nib.load(template_mask_path)
         )
 
+        figure, ax = plt.subplots(figsize=(10, 4))
+        ax.remove()
+
         display = plot_roi(
             sphere_mask,
+            figure=figure,
             bg_img=template_img_path,
             draw_cross=False,
             cmap=ListedColormap(["red"]),
             colorbar=False,
             black_bg=False,
         )
-    else:
-        display = None
+
+        if plot_dst_dir:
+            sphere_name = f"{tpl}_{res}_radius-{sphere_radius}mm_desc-sphere_plot_{mni_coordinate[0]}_{mni_coordinate[1]}_{mni_coordinate[2]}.png"
+
+            sphere_filename = Path(plot_dst_dir) / sphere_name
+            sphere_filename.parent.mkdir(parents=True, exist_ok=True)
+
+            display.savefig(sphere_filename, dpi=720)
 
     if is_focus_point:
         sphere_radius_text = "at the focus point"
     else:
         sphere_radius_text = f"within {sphere_radius}mm" if sphere_radius else None
 
-    return response, display, sphere_radius_text
+    return response, figure, sphere_filename, sphere_radius_text

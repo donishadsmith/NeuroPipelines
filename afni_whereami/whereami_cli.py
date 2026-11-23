@@ -21,6 +21,16 @@ def _get_cmd_args():
         nargs=3,
         help="The MNI coordinate.",
     )
+    parser.add_argument(
+        "--dst_dir",
+        dest="plot_dst_dir",
+        required=False,
+        default=None,
+        help=(
+            "The root of the output directory for the plot. "
+            "Nothing is saved if no location is given."
+        ),
+    )
 
     return parser
 
@@ -28,5 +38,9 @@ def _get_cmd_args():
 if __name__ == "__main__":
     _get_cmd_args = _get_cmd_args()
     args = _get_cmd_args.parse_args()
-    output_text, _, _ = run_pipeline(**vars(args))
+    output_text, _, sphere_filename, _ = run_pipeline(**vars(args))
+
+    if sphere_filename:
+        print(f"File save to {sphere_filename}")
+
     print(output_text)

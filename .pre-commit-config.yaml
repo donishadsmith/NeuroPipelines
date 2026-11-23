@@ -29,4 +29,4 @@ repos:
         - id: ruff
           entry: ruff check --select T201
           files: '.*.py$'
-          exclude: afni_whereami/whereami_cli.py
+          exclude: (afni_whereami/whereami_cli.py|masks/sphere_mask_cli.py)

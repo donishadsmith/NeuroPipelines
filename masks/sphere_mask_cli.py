@@ -65,10 +65,13 @@ def _get_cmd_args():
     )
     parser.add_argument(
         "--dst_dir",
-        dest="dst_dir",
+        dest="sphere_dst_dir",
         required=False,
         default=None,
-        help="The root of the output directory for the sphere mask and plot.",
+        help=(
+            "The root of the output directory for the sphere mask and plot. "
+            "Nothing is saved if no location is given."
+        ),
     )
 
     return parser
@@ -77,4 +80,8 @@ def _get_cmd_args():
 if __name__ == "__main__":
     _get_cmd_args = _get_cmd_args()
     args = _get_cmd_args.parse_args()
-    run_pipeline(**vars(args))
+    sphere_filename, plot_filename, _, _ = run_pipeline(**vars(args))
+
+    if args.sphere_dst_dir:
+        print(f"Sphere NIfTI saved to: {sphere_filename}")
+        print(f"Plot saved to: {plot_filename}")

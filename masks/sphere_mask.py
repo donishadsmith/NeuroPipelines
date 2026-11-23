@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import nibabel as nib, numpy as np
+import nibabel as nib, numpy as np, matplotlib.pyplot as plt
 from nilearn.plotting import plot_roi
 from matplotlib.colors import ListedColormap
 
@@ -87,7 +87,7 @@ def create_transform_text(
     original_coordinate_space, original_coordinate, coordinate, transform_method
 ):
     if original_coordinate_space == "MNI":
-        return None
+        return "Placeholder"
 
     return (
         f"Transformed the original Talairach coordinates ({iterable_to_str(original_coordinate)}) to MNI space "
@@ -96,7 +96,7 @@ def create_transform_text(
 
 
 def run_pipeline(
-    dst_dir,
+    sphere_dst_dir,
     cohort,
     coordinate,
     sphere_radius,
@@ -119,17 +119,15 @@ def run_pipeline(
     coord_name = "_".join([str(x) for x in coordinate])
     tpl = get_entity_value(template_mask_path, "tpl", return_entity_prefix=True)
     res = get_entity_value(template_mask_path, "res", return_entity_prefix=True)
-    sphere_name = (
-        f"{tpl}_{res}_radius-{sphere_radius}mm_desc-sphere_mask_{coord_name}.nii.gz"
-    )
-    sphere_filename = (Path(dst_dir) if dst_dir else Path().home()) / sphere_name
-    sphere_filename.parent.mkdir(parents=True, exist_ok=True)
 
     sphere_mask = create_sphere_mask(coordinate, sphere_radius, template_mask)
-    nib.save(sphere_mask, sphere_filename)
+
+    figure, ax = plt.subplots(figsize=(10, 4))
+    ax.remove()
 
     display = plot_roi(
-        sphere_filename,
+        sphere_mask,
+        figure=figure,
         bg_img=template_img_path,
         draw_cross=False,
         cmap=ListedColormap(["red"]),
@@ -137,14 +135,29 @@ def run_pipeline(
         black_bg=use_black_bg,
     )
 
-    plot_filename = sphere_filename.parent / sphere_filename.name.replace(
-        ".nii.gz", ".png"
-    )
-    display.savefig(plot_filename, dpi=720)
+    if sphere_dst_dir:
+        sphere_name = (
+            f"{tpl}_{res}_radius-{sphere_radius}mm_desc-sphere_mask_{coord_name}.nii.gz"
+        )
+
+        sphere_filename = Path(sphere_dst_dir) / sphere_name
+        sphere_filename.parent.mkdir(parents=True, exist_ok=True)
+
+        nib.save(sphere_mask, sphere_filename)
+
+        plot_filename = sphere_filename.parent / sphere_filename.name.replace(
+            ".nii.gz", ".png"
+        )
+
+        display.savefig(plot_filename, dpi=720)
+    else:
+        plot_filename = None
+        sphere_filename = None
 
     return (
         sphere_filename,
         plot_filename,
+        figure,
         create_transform_text(
             original_coordinate_space, original_coordinate, coordinate, transform_method
         ),
