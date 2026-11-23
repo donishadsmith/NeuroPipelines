@@ -2,11 +2,6 @@ import requests, re
 from functools import lru_cache
 from pathlib import Path
 
-import nibabel as nib, matplotlib.pyplot as plt
-from nilearn.plotting import plot_roi
-from matplotlib.colors import ListedColormap
-from bidsaid.masking import create_sphere_mask
-from bidsaid.files import get_entity_value
 from _general_utils import _check_coordinate, get_template_imgs
 
 SERVER_URL_PATH = Path(__file__).parent / "client" / "server_url.txt"
@@ -37,6 +32,13 @@ def query_afni(x, y, z):
 
 
 def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
+    import nibabel as nib, matplotlib.pyplot as plt
+    from nilearn.plotting import plot_roi
+    from matplotlib.colors import ListedColormap
+
+    from bidsaid.masking import create_sphere_mask
+    from bidsaid.files import get_entity_value
+
     _check_coordinate(mni_coordinate)
 
     # public ip is reserved but just in case it changes, add in signature

@@ -7,14 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-
-import nibabel as nib, numpy as np, matplotlib.pyplot as plt
-from nilearn.plotting import plot_roi
-from matplotlib.colors import ListedColormap
-
-from bidsaid._helpers import iterable_to_str
-from bidsaid.files import get_entity_value
-from bidsaid.masking import create_sphere_mask
+import numpy as np
 
 from _general_utils import _check_coordinate, get_template_imgs
 
@@ -86,6 +79,8 @@ transform_dict = {"Brett": brett_transform, "Lancaster": lancaster_transform}
 def create_transform_text(
     original_coordinate_space, original_coordinate, coordinate, transform_method
 ):
+    from bidsaid._helpers import iterable_to_str
+    
     if original_coordinate_space == "MNI":
         return "Placeholder"
 
@@ -104,6 +99,13 @@ def run_pipeline(
     transform_method,
     use_black_bg,
 ):
+    import nibabel as nib, matplotlib.pyplot as plt
+    from nilearn.plotting import plot_roi
+    from matplotlib.colors import ListedColormap
+
+    from bidsaid.files import get_entity_value
+    from bidsaid.masking import create_sphere_mask
+
     _check_coordinate(coordinate)
 
     coordinate = list(map(float, coordinate))

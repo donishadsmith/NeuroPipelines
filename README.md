@@ -20,7 +20,9 @@ This option doesn't require an explicit download of Python3.10 + or any prior in
 - Extract contents from the Zip and double click on "NeuroPipelines.exe"
 - If Windows Defender complains about an unrecognized app then click "More Info" then click "Run anyway"
 
-*Note: first launch of pages will be slow as the cache for imports isnt built until the first launch of a page*
+*Notes*: 
+    - First launch of pages may be slow as the cache for imports isnt built until the first launch of a page; other apps may be slow at first runtime since the import tax is paid at runtime.
+    - First launch will be even slower if your laptop has Microsoft Defender Antimalware Service activated, which it will if its issued by an institution.
 
 ## Installation
 
@@ -79,7 +81,9 @@ streamlit run app.py
 ### HPC (Conda)
 
 ```bash
-conda create -n venv python=3.10
-source activate venv
+conda create -n neuropiplines python=3.10
+conda activate neuropiplines
+# if conda activate doesnt work, your conda is old, so do:
+# source activate neuropiplines
 pip install -r requirements.txt
 ```

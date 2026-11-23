@@ -8,8 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from typing import Literal
 from datetime import datetime
 
-import pandas as pd, pdfplumber, numpy as np
-from pypdf import PdfReader
+import pandas as pd, numpy as np
 from bidsaid.files import get_entity_value
 from bidsaid.logging import setup_logger
 
@@ -93,6 +92,8 @@ def extract_pdf_text(
     Extract text from a single page of a PDF and removes lines with only whitespace.
     when using pypdf or a list of list for pdfplumber
     """
+    import pdfplumber
+    from pypdf import PdfReader
 
     if use_pdfplumber:
         with pdfplumber.open(pdf_file) as pdf:
