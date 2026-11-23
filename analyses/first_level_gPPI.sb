@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=16G
-#SBATCH --time=5:30:00
+#SBATCH --time=48:00:00
 # Outputs --------------------------------------------------------------------------
 #SBATCH --output=/projects/bigos_lab/mph-study/code/logs/first_level_gPPI_%A_%a.out
 #SBATCH --error=/projects/bigos_lab/mph-study/code/logs/first_level_gPPI_%A_%a.err
