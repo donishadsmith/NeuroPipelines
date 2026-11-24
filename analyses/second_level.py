@@ -1424,7 +1424,7 @@ def main(
 
     LGR.info(f"TASK: {task}, METHOD: {method}")
 
-    report_dir = Path(analysis_dir) / "reports" / "second_level"
+    report_dir = Path(analysis_dir) / "reports" / "second_level" / task
     report_dir.mkdir(parents=True, exist_ok=True)
     report = HTMLReport(
         subject=None,

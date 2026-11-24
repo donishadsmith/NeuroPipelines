@@ -21,7 +21,6 @@ from _utils import (
     get_first_level_gltsym_codes,
     get_group_labels,
     get_second_level_glt_codes,
-    resample_seed_img,
     save_binary_mask,
 )
 
@@ -455,7 +454,6 @@ def create_seed_masks(
     cluster_table_filename,
     template_mask_path,
     template_img_path,
-    thresholded_img,
     sphere_radius,
 ):
     sphere_parent_path = dst_dir / "sphere_masks" / method
@@ -465,7 +463,6 @@ def create_seed_masks(
     plot_parent_path.mkdir(parents=True, exist_ok=True)
 
     clusters_table = pd.read_csv(cluster_table_filename, sep=",")
-    template_mask = nib.load(template_mask_path)
 
     clusters_table["Cluster ID"] = clusters_table["Cluster ID"].astype(str)
     mask_primary = clusters_table["Cluster ID"].str.isdigit()
@@ -474,7 +471,9 @@ def create_seed_masks(
     for index in truncated_clusters_table.index.to_list():
         coord = truncated_clusters_table.loc[index, ["X", "Y", "Z"]].to_list()
 
-        sphere_mask = create_sphere_mask(tuple(coord), sphere_radius, template_mask)
+        sphere_mask = create_sphere_mask(
+            tuple(coord), sphere_radius, template_mask_path
+        )
 
         coord_name = "_".join([str(x) for x in coord])
         sphere_name = (
@@ -666,7 +665,6 @@ def main(
                 cluster_table_filename,
                 template_mask_path,
                 template_img_path,
-                thresholded_img,
                 sphere_radius,
             )
             HTMLReport.append_section(

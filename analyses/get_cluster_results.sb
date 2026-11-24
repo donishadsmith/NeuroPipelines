@@ -40,7 +40,7 @@ else
 	TASK=${TASKS[${SLURM_ARRAY_TASK_ID}]}
 fi
 
-SECOND_LEVEL_REPORT_DIR="$BIDS_DIR/derivatives/$ANALYSIS_TYPE/reports/second_level"
+SECOND_LEVEL_REPORT_DIR="$BIDS_DIR/derivatives/$ANALYSIS_TYPE/reports/second_level/$TASK"
 ANALYSIS_DIR="$BIDS_DIR/derivatives/$ANALYSIS_TYPE/$TASK"
 
 TEMPLATE_MASK_PATH=${TEMPLATE_MASK_PATH:-"/projects/bigos_lab/templateflow/tpl-MNIPediatricAsym/cohort-1/tpl-MNIPediatricAsym_cohort-1_res-2_desc-brain_mask.nii.gz"}

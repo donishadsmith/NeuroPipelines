@@ -76,7 +76,7 @@ class InvalidRunError(Exception):
 def validate_first_level_inputs(
     dst_dir, bids_dir, deriv_dir, cohort, task, subject, analysis_type
 ):
-    report_dir = Path(dst_dir) / "reports" / "first_level"
+    report_dir = Path(dst_dir) / "reports" / "first_level" / task
     report_dir.mkdir(parents=True, exist_ok=True)
 
     if task not in VALID_TASK_NAMES[cohort]:
