@@ -20,7 +20,7 @@ This option doesn't require an explicit download of Python3.10 + or any prior in
 - Extract contents from the Zip and double click on "NeuroPipelines.exe"
 - If Windows Defender complains about an unrecognized app then click "More Info" then click "Run anyway"
 
-*Notes*: 
+*Notes*:
     - First launch of pages may be slow as the cache for imports isnt built until the first launch of a page; other apps may be slow at first runtime since the import tax is paid at runtime.
     - First launch will be even slower if your laptop has Microsoft Defender Antimalware Service activated, which it will if its issued by an institution.
 
@@ -76,7 +76,6 @@ streamlit run app.py
 
 ![image](assets/hub.png)
 ![image](assets/app1.png)
-![image](assets/app2.png)
 
 ### HPC (Conda)
 

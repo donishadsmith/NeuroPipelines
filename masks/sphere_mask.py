@@ -80,7 +80,7 @@ def create_transform_text(
     original_coordinate_space, original_coordinate, coordinate, transform_method
 ):
     from bidsaid._helpers import iterable_to_str
-    
+
     if original_coordinate_space == "MNI":
         return "Placeholder"
 

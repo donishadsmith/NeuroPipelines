@@ -13,41 +13,100 @@ https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html?__g
 https://github.com/fastapi/fastapi/discussions/14783
 """
 
-import subprocess
-from fastapi import FastAPI
-from pydantic import BaseModel
+import subprocess, threading, time
+from collections import defaultdict, deque
+from functools import lru_cache
+from typing import Literal
 
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, Field
+
+LIMIT = 30
+WINDOW = 60
+HISTORY = defaultdict(deque)
+HISTORY_LOCK = threading.Lock()
+
+RUNNING = threading.Lock()
+PROGRESS = threading.BoundedSemaphore(5)
 app = FastAPI()
 
 
 class Coordinate(BaseModel):
-    x: int
-    y: int
-    z: int
+    x: int = Field(ge=-96, le=96)
+    y: int = Field(ge=-132, le=96)
+    z: int = Field(ge=-78, le=114)
+    cohort: Literal["adults", "kids"] = "adults"
+
+
+@lru_cache(maxsize=1024)
+def run_afni(x: int, y: int, z: int, cohort: str) -> str:
+
+    command = [
+        "podman",
+        "run",
+        "--rm",
+        "--timeout",
+        "30",
+        "localhost/afni",
+        "whereami",
+        str(x),
+        str(y),
+        str(z),
+        "-lpi",
+        "-space",
+        "MNI_2009c_asym",
+        "-atlas",
+        "FS.afni.MNI2009c_asym",
+    ]
+
+    if cohort == "kids":
+        command += ["-atlas", "Haskins_Pediatric_Nonlinear_1.01"]
+
+    command += ["-atlas", "Brodmann_Pijn_AFNI"]
+
+    if not PROGRESS.acquire(blocking=False):
+        raise HTTPException(503, "Server is busy, try again soon.")
+
+    try:
+        with (
+            RUNNING
+        ):  # one thread can call afni at a time and the lock must first be released
+            output = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                timeout=40,
+            )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, "AFNI took too long. Try again.")
+    finally:
+        PROGRESS.release()
+
+    if output.returncode != 0:
+        raise HTTPException(503, "Sorry, AFNI failed. Try again.")
+
+    return output.stdout
+
+
+def check_rate_limit(address: str) -> None:
+    current_time = time.monotonic()
+
+    with HISTORY_LOCK:
+        times = HISTORY[address]
+
+        while times and current_time - times[0] > WINDOW:
+            times.popleft()
+
+        if len(times) >= LIMIT:
+            raise HTTPException(429, "Too many requests. Try again in a minute.")
+
+        times.append(current_time)
 
 
 @app.post("/")
-def whereami(coordinate: Coordinate):
-    output = subprocess.run(
-        [
-            "podman",
-            "run",
-            "--rm",
-            "localhost/afni",
-            "whereami",
-            str(coordinate.x),
-            str(coordinate.y),
-            str(coordinate.z),
-            "-lpi",
-            "-space",
-            "MNI_2009c_asym",
-            "-atlas",
-            "FS.afni.MNI2009c_asym",
-            "-atlas",
-            "Brodmann_Pijn_AFNI",
-        ],
-        capture_output=True,
-        text=True,
-    )
+def whereami(coordinate: Coordinate, request: Request) -> dict[str, str]:
+    check_rate_limit(request.client.host)
 
-    return {"output": output.stdout}
+    return {
+        "output": run_afni(coordinate.x, coordinate.y, coordinate.z, coordinate.cohort)
+    }

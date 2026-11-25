@@ -33,6 +33,7 @@ COLLECT_DATA = ["pdfminer"]
 
 EXCLUDES = ["pyvista", "vtk", "vtkmodules", "imageio_ffmpeg", "pytest"]
 
+
 def _app_files():
     files = [ROOT / name for name in ROOT_FILES]
     for folder in APP_DIRS:
@@ -50,7 +51,9 @@ def _app_files():
 
 def _imports_used_by(py_files):
     local_names = {path.stem for path in py_files}
-    local_names.update(part for path in py_files for part in path.relative_to(ROOT).parts)
+    local_names.update(
+        part for path in py_files for part in path.relative_to(ROOT).parts
+    )
 
     modules = set()
     for path in py_files:
@@ -71,7 +74,9 @@ app_files = _app_files()
 
 datas = [(str(path), str(path.relative_to(ROOT).parent)) for path in app_files]
 binaries = []
-hiddenimports = _imports_used_by([p for p in app_files if p.suffix == ".py"]) + EXTRA_IMPORTS
+hiddenimports = (
+    _imports_used_by([p for p in app_files if p.suffix == ".py"]) + EXTRA_IMPORTS
+)
 
 for package in COLLECT_ALL:
     pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package)

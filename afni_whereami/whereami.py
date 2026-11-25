@@ -18,12 +18,8 @@ def get_server():
 # CLI path will still repeatedly send requests to server but Streamlit path
 # is most likely to be used
 @lru_cache(maxsize=1024)
-def query_afni(x, y, z):
-    request_data = {
-        "x": x,
-        "y": y,
-        "z": z,
-    }
+def query_afni(x, y, z, cohort):
+    request_data = {"x": x, "y": y, "z": z, "cohort": cohort}
 
     # Verification is overkill but good practice
     response = requests.post(f"{get_server()}/", json=request_data, verify=CERT_PATH)
@@ -42,7 +38,9 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
     _check_coordinate(mni_coordinate)
 
     # public ip is reserved but just in case it changes, add in signature
-    response = query_afni(mni_coordinate[0], mni_coordinate[1], mni_coordinate[2])
+    response = query_afni(
+        mni_coordinate[0], mni_coordinate[1], mni_coordinate[2], cohort
+    )
     output_text = [x.strip() for x in response.split("\n")]
     target_str = "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation"
 
