@@ -5,7 +5,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "afni_whereami"))
 
 import streamlit as st
-from bidsaid._helpers import iterable_to_str
 from _streamlit_utils import _select_content
 from whereami import run_pipeline
 
@@ -71,9 +70,7 @@ if st.button("Run Pipeline", type="primary"):
     with st.spinner("Processing..."):
         (
             st.session_state.afni_output_text,
-            st.session_state.afni_sphere_figure,
-            st.session_state.afni_sphere_filename,
-            st.session_state.sphere_radius_text,
+            st.session_state.sphere_output,
         ) = run_pipeline(**kwargs)
 
 if st.session_state.get("afni_output_text"):
@@ -81,18 +78,16 @@ if st.session_state.get("afni_output_text"):
     with col2:
         st.text(st.session_state.get("afni_output_text"), text_alignment="center")
 
-    if st.session_state.get("afni_sphere_filename"):
-        st.success(f"Plot saved to: {st.session_state.get('afni_sphere_filename')}")
+    if output := st.session_state.get("sphere_output"):
 
-    if st.session_state.get("afni_sphere_figure"):
-        st.pyplot(st.session_state.get("afni_sphere_figure"))
-        additional_text = (
-            f"[{iterable_to_str([X, Y, Z])}]"
-            if st.session_state.get("sphere_radius_text")
-            and "focus point" in st.session_state.get("sphere_radius_text").lower()
-            else f"from {iterable_to_str([X, Y, Z])}"
-        )
-        st.caption(
-            "**Note:** The radius of the sphere mask (red) adjusts to match the distance of the closest "
-            f"label from the Freesurfer MNI2009c DK parcellation (which is {st.session_state.get('sphere_radius_text')} {additional_text})."
-        )
+        for atlas, content in output.items():
+            if sphere_filename := content.get("afni_sphere_filename"):
+                st.success(f"Plot saved to: {sphere_filename}")
+
+            if sphere_figure := content.get("afni_sphere_figure"):
+                st.pyplot(sphere_figure)
+
+                st.caption(
+                    "**Note:** The radius of the red sphere matches the distance from the "
+                    "coordinate to the closest label in this atlas."
+                )

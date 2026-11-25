@@ -38,9 +38,10 @@ def _get_cmd_args():
 if __name__ == "__main__":
     _get_cmd_args = _get_cmd_args()
     args = _get_cmd_args.parse_args()
-    output_text, _, sphere_filename, _ = run_pipeline(**vars(args))
+    output_text, output = run_pipeline(**vars(args))
 
-    if sphere_filename:
-        print(f"File save to {sphere_filename}")
+    if output:
+        for _, content in output.items():
+            print(f"File save to {content.get('afni_sphere_filename')}")
 
     print(output_text)

@@ -4,6 +4,16 @@ from pathlib import Path
 
 from _general_utils import _check_coordinate, get_template_imgs
 
+TARGETS_DICT = {
+    "FS.afni.MNI2009c_asym": {
+        "name": "Freesurfer MNI2009c DK parcellation",
+        "target": "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation",
+    },
+    "Brodmann_Pijn_AFNI": {
+        "name": "Brodmann atlas for MNI 2009c - Pijnenburg Pijn",
+        "target": "Atlas Brodmann_Pijn_AFNI: Brodmann atlas for MNI 2009c - Pijnenburg AFNI version",
+    },
+}
 SERVER_URL_PATH = Path(__file__).parent / "client" / "server_url.txt"
 CERT_PATH = Path(__file__).parent / "client" / "cert.pem"
 
@@ -18,13 +28,40 @@ def get_server():
 # CLI path will still repeatedly send requests to server but Streamlit path
 # is most likely to be used
 @lru_cache(maxsize=1024)
-def query_afni(x, y, z, cohort):
-    request_data = {"x": x, "y": y, "z": z, "cohort": cohort}
+def query_afni(x, y, z):
+    request_data = {"x": x, "y": y, "z": z}
 
     # Verification is overkill but good practice
     response = requests.post(f"{get_server()}/", json=request_data, verify=CERT_PATH)
 
     return response.json()["output"]
+
+
+def identify_target(output_text):
+    new_dict = {}
+    for atlas, content in TARGETS_DICT.items():
+        sphere_radius = None
+        is_focus_point = False
+        target_str = content["target"]
+
+        if target_str in output_text:
+            distance_info_index = output_text.index(target_str) + 1
+            distance_info = output_text[distance_info_index]
+
+            if "Focus point" not in distance_info:
+                sphere_radius = float(
+                    re.search(r"\d+(\.\d+)?", distance_info.split(":")[0]).group()
+                )
+            else:
+                sphere_radius = 1.0
+                is_focus_point = True
+
+        new_dict[atlas] = dict(content)
+        new_dict[atlas].update(
+            {"sphere_radius": sphere_radius, "is_focus_point": is_focus_point}
+        )
+
+    return new_dict
 
 
 def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
@@ -38,30 +75,9 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
     _check_coordinate(mni_coordinate)
 
     # public ip is reserved but just in case it changes, add in signature
-    response = query_afni(
-        mni_coordinate[0], mni_coordinate[1], mni_coordinate[2], cohort
-    )
-    output_text = [x.strip() for x in response.split("\n")]
-    target_str = "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation"
-
-    is_focus_point = False
-    if target_str in output_text:
-        distance_info_index = (
-            output_text.index(
-                "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation"
-            )
-            + 1
-        )
-        distance_info = output_text[distance_info_index]
-        if "Focus point" not in distance_info:
-            sphere_radius = float(
-                re.search(r"\d+(\.\d+)?", distance_info.split(":")[0]).group()
-            )
-        else:
-            sphere_radius = 1.0
-            is_focus_point = True
-    else:
-        sphere_radius = None
+    response = query_afni(mni_coordinate[0], mni_coordinate[1], mni_coordinate[2])
+    output_text = [x.strip() for x in response.split("\n") if len(x) > 0]
+    target_dict = identify_target(output_text)
 
     template_mask_path, template_img_path = get_template_imgs(cohort)
     tpl = get_entity_value(template_mask_path, "tpl", return_entity_prefix=True)
@@ -69,37 +85,60 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
 
     mni_coordinate = list(map(float, mni_coordinate))
 
-    sphere_filename = None
-    figure = None
-    if sphere_radius:
-        sphere_mask = create_sphere_mask(
-            mni_coordinate, sphere_radius, nib.load(template_mask_path)
-        )
+    output = {}
+    for atlas, content in target_dict.items():
+        sphere_radius = content["sphere_radius"]
+        output.update({atlas: content})
+        sphere_filename = None
+        figure = None
+        is_focus_point = content["is_focus_point"]
 
-        figure, ax = plt.subplots(figsize=(10, 4))
-        ax.remove()
+        if sphere_radius:
+            if is_focus_point:
+                sphere_radius_text = "at the focus point"
+            else:
+                sphere_radius_text = (
+                    f"within {sphere_radius}mm" if sphere_radius else None
+                )
 
-        display = plot_roi(
-            sphere_mask,
-            figure=figure,
-            bg_img=template_img_path,
-            draw_cross=False,
-            cmap=ListedColormap(["red"]),
-            colorbar=False,
-            black_bg=False,
-        )
+            sphere_mask = create_sphere_mask(
+                mni_coordinate, sphere_radius, nib.load(template_mask_path)
+            )
 
-        if plot_dst_dir:
-            sphere_name = f"{tpl}_{res}_radius-{sphere_radius}mm_desc-sphere_plot_{mni_coordinate[0]}_{mni_coordinate[1]}_{mni_coordinate[2]}.png"
+            figure, ax = plt.subplots(figsize=(12, 6))
+            ax.remove()
 
-            sphere_filename = Path(plot_dst_dir) / sphere_name
-            sphere_filename.parent.mkdir(parents=True, exist_ok=True)
+            display = plot_roi(
+                sphere_mask,
+                figure=figure,
+                axes=(0, 0, 1, 0.86),
+                bg_img=template_img_path,
+                draw_cross=False,
+                cmap=ListedColormap(["red"]),
+                colorbar=False,
+                black_bg=False,
+            )
 
-            display.savefig(sphere_filename, dpi=720)
+            figure.suptitle(
+                f"MNI coordinate ({mni_coordinate[0]}, {mni_coordinate[1]}, {mni_coordinate[2]}): "
+                f"nearest label {sphere_radius_text}\n{content['name']}",
+                fontsize=18,
+            )
 
-    if is_focus_point:
-        sphere_radius_text = "at the focus point"
-    else:
-        sphere_radius_text = f"within {sphere_radius}mm" if sphere_radius else None
+            if plot_dst_dir:
+                sphere_name = f"{tpl}_{res}_radius-{sphere_radius}mm_atlas-{atlas}_desc-sphere_plot_{mni_coordinate[0]}_{mni_coordinate[1]}_{mni_coordinate[2]}.png"
 
-    return response, figure, sphere_filename, sphere_radius_text
+                sphere_filename = Path(plot_dst_dir) / sphere_name
+                sphere_filename.parent.mkdir(parents=True, exist_ok=True)
+
+                display.savefig(sphere_filename, dpi=720)
+
+            output[atlas].update(
+                {
+                    "afni_sphere_filename": sphere_filename,
+                    "afni_sphere_figure": figure,
+                    "sphere_radius_text": sphere_radius_text,
+                }
+            )
+
+    return response, output

@@ -16,7 +16,6 @@ https://github.com/fastapi/fastapi/discussions/14783
 import subprocess, threading, time
 from collections import defaultdict, deque
 from functools import lru_cache
-from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -35,35 +34,10 @@ class Coordinate(BaseModel):
     x: int = Field(ge=-96, le=96)
     y: int = Field(ge=-132, le=96)
     z: int = Field(ge=-78, le=114)
-    cohort: Literal["adults", "kids"] = "adults"
 
 
 @lru_cache(maxsize=1024)
-def run_afni(x: int, y: int, z: int, cohort: str) -> str:
-
-    command = [
-        "podman",
-        "run",
-        "--rm",
-        "--timeout",
-        "30",
-        "localhost/afni",
-        "whereami",
-        str(x),
-        str(y),
-        str(z),
-        "-lpi",
-        "-space",
-        "MNI_2009c_asym",
-        "-atlas",
-        "FS.afni.MNI2009c_asym",
-    ]
-
-    if cohort == "kids":
-        command += ["-atlas", "Haskins_Pediatric_Nonlinear_1.01"]
-
-    command += ["-atlas", "Brodmann_Pijn_AFNI"]
-
+def run_afni(x: int, y: int, z: int) -> str:
     if not PROGRESS.acquire(blocking=False):
         raise HTTPException(503, "Server is busy, try again soon.")
 
@@ -72,7 +46,25 @@ def run_afni(x: int, y: int, z: int, cohort: str) -> str:
             RUNNING
         ):  # one thread can call afni at a time and the lock must first be released
             output = subprocess.run(
-                command,
+                [
+                    "podman",
+                    "run",
+                    "--rm",
+                    "--timeout",
+                    "30",
+                    "localhost/afni",
+                    "whereami",
+                    str(x),
+                    str(y),
+                    str(z),
+                    "-lpi",
+                    "-space",
+                    "MNI_2009c_asym",
+                    "-atlas",
+                    "FS.afni.MNI2009c_asym",
+                    "-atlas",
+                    "Brodmann_Pijn_AFNI",
+                ],
                 capture_output=True,
                 text=True,
                 timeout=40,
@@ -107,6 +99,4 @@ def check_rate_limit(address: str) -> None:
 def whereami(coordinate: Coordinate, request: Request) -> dict[str, str]:
     check_rate_limit(request.client.host)
 
-    return {
-        "output": run_afni(coordinate.x, coordinate.y, coordinate.z, coordinate.cohort)
-    }
+    return {"output": run_afni(coordinate.x, coordinate.y, coordinate.z)}
