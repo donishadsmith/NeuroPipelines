@@ -89,7 +89,7 @@ if st.session_state.get("src_dir"):
 
 cohort = st.selectbox(
     "Cohort",
-    ("kids", "adults"),
+    ("Kids", "Adults"),
     help="Determines which scan protocols and tasks are available.",
 )
 
@@ -218,7 +218,7 @@ kwargs = {
     "exclude_nifti_filenames": (
         exclude_nifti_filenames if exclude_nifti_filenames else None
     ),
-    "cohort": cohort,
+    "cohort": cohort.lower(),
     "delete_temp_dir": delete_temp_dir,
     "create_dataset_metadata": create_dataset_metadata,
     "add_sessions_tsv": add_sessions_tsv,

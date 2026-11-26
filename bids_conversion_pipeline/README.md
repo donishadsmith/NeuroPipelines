@@ -13,10 +13,10 @@ Pipeline for converting non-BIDS data to BIDS format. Assumes source data has fo
 4. Optionally creates the participants TSV, dataset description JSON, and sessions TSV files. If a participants TSV already exists, new subjects are appended.
 
 **Execution order:**
-1. `bids_conversion_cli.py` — main conversion
-2. `participants_tsv_cli.py` — create or update participants TSV
-3. `participants_demographics_cli.py` — add or update participants TSV with demographics data
-4. `add_dosages_cli.py` — add dosages to sessions TSV
+1. `bids_conversion_cli.py`: main conversion
+2. `participants_tsv_cli.py`: create or update participants TSV
+3. `participants_demographics_cli.py`: add or update participants TSV with demographics data
+4. `add_dosages_cli.py`: add dosages to sessions TSV
 
 ## Command Line Interface (CLI)
 

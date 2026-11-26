@@ -11,18 +11,25 @@ Neuroimaging pipelines tailored for specific tasks and scan protocols in a multi
 - Miscellaneous utilities
 - Extracting Conners 4 data
 - Organizing NIH toolbox data
-- Lookup brain regions for MNI coordinates
+- Look up brain regions for MNI coordinates (also available as a [web app](https://whereami-brain-lookup.duckdns.org) that accepts Talairach coordinates too)
+
+## Web App (No Installation)
+
+Look up brain regions for a coordinate in the browser: https://whereami-brain-lookup.duckdns.org
+
+- Accepts MNI or Talairach coordinates (Talairach coordinates are converted to MNI with the Lancaster or Brett method)
+- Returns the text output from AFNI's `whereami` and figures for the Freesurfer MNI2009c DK parcellation and the Brodmann atlas for MNI 2009c - Pijnenburg AFNI version
 
 ## No Installation (Windows Only)
-This option doesn't require an explicit download of Python3.10 + or any prior installation since the Python interpreter and other packages are bundled in the executable, so just:
+This option doesn't require an explicit download of Python 3.10+ or any prior installation since the Python interpreter and other packages are bundled in the executable, so just:
 
 - [Download NeuroPipelines Executable Build](https://github.com/donishadsmith/NeuroPipelines/releases/latest/download/NeuroPipelines-windows.zip)
 - Extract contents from the Zip and double click on "NeuroPipelines.exe"
 - If Windows Defender complains about an unrecognized app then click "More Info" then click "Run anyway"
 
 *Notes*:
-    - First launch of pages may be slow as the cache for imports isnt built until the first launch of a page; other apps may be slow at first runtime since the import tax is paid at runtime.
-    - First launch will be even slower if your laptop has Microsoft Defender Antimalware Service activated, which it will if its issued by an institution.
+- First launch of pages may be slow as the cache for imports isn't built until the first launch of a page; other apps may be slow at first runtime since the import tax is paid at runtime.
+- First launch will be even slower if your laptop has Microsoft Defender Antimalware Service activated, which it will if it's issued by an institution.
 
 ## Installation
 
@@ -35,8 +42,8 @@ This option doesn't require an explicit download of Python3.10 + or any prior in
 Clone the repository:
 
 ```bash
-git clone https://github.com/donishadsmith/neuro_pipelines
-cd neuro_pipelines
+git clone https://github.com/donishadsmith/NeuroPipelines
+cd NeuroPipelines
 ```
 
 ### Local Workstation
@@ -82,7 +89,7 @@ streamlit run app.py
 ```bash
 conda create -n neuropiplines python=3.10
 conda activate neuropiplines
-# if conda activate doesnt work, your conda is old, so do:
+# if conda activate doesn't work, your conda is old, so do:
 # source activate neuropiplines
 pip install -r requirements.txt
 ```

@@ -33,7 +33,6 @@ COLLECT_DATA = ["pdfminer"]
 
 EXCLUDES = ["pyvista", "vtk", "vtkmodules", "imageio_ffmpeg", "pytest"]
 
-
 def _app_files():
     files = [ROOT / name for name in ROOT_FILES]
     for folder in APP_DIRS:

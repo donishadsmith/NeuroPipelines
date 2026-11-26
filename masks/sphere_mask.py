@@ -73,20 +73,23 @@ def lancaster_transform(coord):
     return np.round(coord[:3]).tolist()
 
 
-transform_dict = {"Brett": brett_transform, "Lancaster": lancaster_transform}
+TRANSFORM_DICT = {"Brett": brett_transform, "Lancaster": lancaster_transform}
 
 
 def create_transform_text(
     original_coordinate_space, original_coordinate, coordinate, transform_method
 ):
-    from bidsaid._helpers import iterable_to_str
-
     if original_coordinate_space == "MNI":
         return "Placeholder"
 
+    original_text = ", ".join(f"{value:g}" for value in original_coordinate)
+    transformed_text = ", ".join(f"{value:g}" for value in coordinate)
+
     return (
-        f"Transformed the original Talairach coordinates ({iterable_to_str(original_coordinate)}) to MNI space "
-        f"({iterable_to_str(coordinate)}) using the {transform_method} method"
+        f"Transformed the original Talairach coordinates ({original_text}) to MNI space "
+        f"({transformed_text}) using the {transform_method} method.\n\n "
+        "IMPORTANT: Talairach to MNI transforms are approximate and can be off by several millimeters. "
+        "Coordinates near the cortical surface may land at the edge of the brain or just outside it."
     )
 
 
@@ -116,7 +119,7 @@ def run_pipeline(
 
     original_coordinate = coordinate
     if original_coordinate_space != "MNI":
-        coordinate = transform_dict[transform_method](coordinate)
+        coordinate = TRANSFORM_DICT[transform_method](coordinate)
 
     coord_name = "_".join([str(x) for x in coordinate])
     tpl = get_entity_value(template_mask_path, "tpl", return_entity_prefix=True)

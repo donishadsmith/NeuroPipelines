@@ -10,7 +10,7 @@ TARGETS_DICT = {
         "target": "Atlas FS.afni.MNI2009c_asym: Freesurfer MNI2009c DK parcellation",
     },
     "Brodmann_Pijn_AFNI": {
-        "name": "Brodmann atlas for MNI 2009c - Pijnenburg Pijn",
+        "name": "Brodmann atlas for MNI 2009c - Pijnenburg AFNI version",
         "target": "Atlas Brodmann_Pijn_AFNI: Brodmann atlas for MNI 2009c - Pijnenburg AFNI version",
     },
 }
@@ -32,7 +32,10 @@ def query_afni(x, y, z):
     request_data = {"x": x, "y": y, "z": z}
 
     # Verification is overkill but good practice
-    response = requests.post(f"{get_server()}/", json=request_data, verify=CERT_PATH)
+    response = requests.post(
+        f"{get_server()}/", json=request_data, verify=CERT_PATH, timeout=30
+    )
+    response.raise_for_status()
 
     return response.json()["output"]
 
@@ -98,7 +101,7 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
                 sphere_radius_text = "at the focus point"
             else:
                 sphere_radius_text = (
-                    f"within {sphere_radius}mm" if sphere_radius else None
+                    f"within {sphere_radius:g}mm" if sphere_radius else None
                 )
 
             sphere_mask = create_sphere_mask(
@@ -120,7 +123,7 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
             )
 
             figure.suptitle(
-                f"MNI coordinate ({mni_coordinate[0]}, {mni_coordinate[1]}, {mni_coordinate[2]}): "
+                f"MNI coordinate ({mni_coordinate[0]:g}, {mni_coordinate[1]:g}, {mni_coordinate[2]:g}): "
                 f"nearest label {sphere_radius_text}\n{content['name']}",
                 fontsize=18,
             )
@@ -137,7 +140,6 @@ def run_pipeline(cohort, mni_coordinate, plot_dst_dir):
                 {
                     "afni_sphere_filename": sphere_filename,
                     "afni_sphere_figure": figure,
-                    "sphere_radius_text": sphere_radius_text,
                 }
             )
 
