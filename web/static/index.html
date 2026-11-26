@@ -1,0 +1,273 @@
+<!--literally took 2 hours to get the css working-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>WhereAmI MNI Lookup</title>
+        <style>
+            body {
+                background-color: #1E1E1E;
+                color: #F2F0EF;
+                font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+                font-size: 20px;
+            }
+
+            label, input {
+                vertical-align: middle;
+            }
+
+            input, select {
+                font: inherit;
+            }
+
+            label {
+                margin-right: 6px;
+            }
+
+            .cohort_field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .cohort_field label {
+                padding: 6px;
+            }
+
+            .cohort_field select {
+                padding: 1px 12px;
+                text-align: center;
+                cursor: pointer;
+            }
+
+            .cohort_field select option {
+                text-align: left;
+            }
+
+            .row {
+                margin-bottom: 50px;
+                justify-content: center;
+                align-items: center;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 16px 30px;
+            }
+
+            input[type="number"] {
+                width: 185px;
+                box-sizing: border-box;
+            }
+
+            input::placeholder {
+                text-align: center;
+            }
+
+            button {
+                margin-top: 20px;
+                font-size: 16px;
+                font-weight: 600;
+                padding: 6px 12px;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                background-color: #047857;
+                cursor: pointer;
+            }
+
+            button:hover {
+                background-color: #065f46;
+            }
+
+            .intro_text {
+                margin: 0 auto;
+                text-align: justify;
+                font-size: 20px;
+                margin-bottom: 50px;
+            }
+
+            .intro_text ul {
+                list-style-position: inside;
+                padding: 0;
+            }
+
+            a {
+                color: white;
+            }
+
+            a:hover {
+                color: lightblue
+            }
+
+            #transform_text {
+                font-size: 20px;
+                text-align: center;
+                border: 2px solid #F2F0EF;
+                padding: 16px;
+                width: fit-content;
+                border-radius: 6px;
+                margin: 0 auto 30px;
+                white-space: pre-line;
+                max-width: 900px;
+            }
+
+            #transform_text:empty {
+                display: none;
+            }
+
+            #text_output {
+                font-size: 20px;
+                text-align: center;
+                white-space: pre-line;
+            }
+
+            #status {
+                font-size: 16px;
+            }
+
+            #status:empty {
+                display: none;
+            }
+
+            .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .error {
+                background-color: rgba(240, 128, 128, 0.5);
+                padding: 16px;
+                width: fit-content;
+                height: fit-content;
+                border-radius: 6px;
+            }
+
+            #error_message {
+                font-size: 20px;
+                color: #F2F0EF;
+                margin-bottom: 10px;
+            }
+
+            .spinner {
+                padding: 6px;
+                width: 18px;
+                height: 18px;
+                border: 3px solid #F2F0EF;
+                border-top-color: transparent;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+
+            .spinner[hidden] {
+                display: none;
+            }
+
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+
+            #figures {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+
+            #figures p {
+                text-align: center;
+            }
+
+            #figures figure {
+                margin: 0;
+                text-align: center;
+            }
+
+            #figures img {
+                max-width: 100%;
+                height: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 style="text-align: center;">WhereAmI MNI Lookup</h1>
+        <div class="row intro_text" style="border: 2px solid #F2F0EF; padding: 16px; width: fit-content; border-radius: 6px;">
+            <ul>
+                <li>Text output originates from <a href="https://afni.nimh.nih.gov/pub/dist/doc/program_help/whereami.html">AFNI's whereami</a> using the FS.afni.MNI2009c_asym and Brodmann_Pijn_AFNI atlases.</li>
+                <li>The "Cohort" field doesn't change the output, it is literally used to determine the T1w MNI template (adult vs pediatric) to draw the spheres on.</li>
+                <li>The "Transform Method" field is only used when the "Coordinate Space" is set to "Talairach".</li>
+                <li>If the coordinate is in Talairach space then use the Lancaster method unless the paper is pre-2010 or specifically states that the Brett transform was used.</li>
+                <li>The {TLRC} line in the text output is AFNI's own conversion of the MNI coordinate, so it will not match a Talairach coordinate entered here.</li>
+            </ul>
+        </div>
+
+        <form id="lookup_form">
+            <div class="row">
+                <div class="cohort_field">
+                    <label for="cohort">Cohort:</label>
+                    <select id="cohort" name="cohort">
+                        <option value="kids">Kids</option>
+                        <option value="adults">Adults</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="coordinate_field_x">
+                    <label for="x">X:</label>
+                    <input type="number" id="x" name="x" value="-40" min="-96" max="96" required>
+                </div>
+
+                <div class="coordinate_field_y">
+                    <label for="y">Y:</label>
+                    <input type="number" id="y" name="y" value="40" min="-132" max="96" required>
+                </div>
+
+                <div class="coordinate_field_z">
+                    <label for="z">Z:</label>
+                    <input type="number" id="z" name="z" value="40" min="-78" max="114" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="coordinate_space_field">
+                    <label for="coordinate_space">Coordinate Space:</label>
+                    <select id="coordinate_space" name="coordinate_space">
+                        <option value="MNI">MNI</option>
+                        <option value="Talairach">Talairach</option>
+                    </select>
+                </div>
+
+                <div class="transform_method_field">
+                    <label for="transform_method">Transform Method:</label>
+                    <select id="transform_method" name="transform_method">
+                        <option value="Lancaster">Lancaster</option>
+                        <option value="Brett">Brett</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row run_button">
+                <button>Run</button>
+            </div>
+        </form>
+
+        <div class="row loading">
+            <div id="spinner" class="spinner" hidden></div>
+            
+            <p id="status"></p>
+
+            <div id="error" class="error" hidden>
+                <p id="error_message"></p>
+            </div>
+        </div>
+
+        <p id="transform_text"></p>
+
+        <pre id="text_output"></pre>
+
+        <div id="figures"></div>
+
+        <script src="display_post_data.js"></script>
+    </body>
+</html>

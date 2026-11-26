@@ -50,8 +50,8 @@ def _get_cmd_args(caller):
         dest="task",
         required=True,
         help=(
-            "Task name. Kids: nback, flanker, mtle, mtlr, princess. "
-            "Adults: nback, flanker, simplegng, complexgng, mtle, mtlr."
+            "Task name. kids: nback, flanker, mtle, mtlr, princess. "
+            "adults: nback, flanker, simplegng, complexgng, mtle, mtlr."
         ),
     )
     parser.add_argument(
@@ -193,10 +193,10 @@ def _app(caller, pipeline):
             st.error(f"Not a valid log directory: {st.session_state.get('log_dir')}")
 
     cohort = st.selectbox(
-        "Cohort", ("kids", "adults"), help="Determines which tasks are available."
+        "Cohort", ("kids", "Adults"), help="Determines which tasks are available."
     )
 
-    if cohort == "kids":
+    if cohort == "Kids":
         valid_tasks = ("nback", "princess", "flanker", "mtle", "mtlr")
     else:
         valid_tasks = ("nback", "flanker", "simplegng", "complexgng", "mtle", "mtlr")
@@ -305,7 +305,7 @@ def _app(caller, pipeline):
         "dst_dir": st.session_state.get("dst_dir"),
         "temp_dir": st.session_state.get("temp_dir"),
         "delete_temp_dir": delete_temp_dir,
-        "cohort": cohort,
+        "cohort": cohort.lower(),
         "task": task,
         "subjects": subjects if subjects else None,
         "subjects_visits_file": st.session_state.get("subjects_visits_file"),

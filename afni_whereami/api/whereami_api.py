@@ -1,6 +1,6 @@
 """
 For documentation: a copy of the Python file running fastapi that is hosted on a continuously running instance
-on Oracle Cloud. It's the free tier so the instance only has 1 GB ram and 1 OCPU (VM.Standard.E2.1.Micro)
+on Oracle Cloud. It's the free tier so the instance only has 1 GB ram and 1 OCPU (VM.Standard.E2.1.Micro) uses x64 architecture
 
 https://www.freedesktop.org/software/systemd/man/latest/loginctl.html
 https://man7.org/linux/man-pages/man2/fallocate.2.html
@@ -11,6 +11,9 @@ requests continuously on the cloud vm:
 https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html?__goaway_challenge=meta-refresh&__goaway_id=8887fcae4814db9e37888fc15975b6b4&__goaway_referer=https%3A%2F%2Fwww.google.com%2F
 
 https://github.com/fastapi/fastapi/discussions/14783
+
+File also used by another free tier ARM instance (VM.Standard.A1.Flex) that serves the web page whereami-lookup.duckdns.org
+that instance accepts coordinates and cohort does all the
 """
 
 import subprocess, threading, time

@@ -28,7 +28,7 @@ st.markdown("**Required Arguments**")
 
 cohort = st.selectbox(
     "Cohort",
-    ("kids", "adults"),
+    ("Kids", "Adults"),
     help="Determines the template space used for visualization purposes.",
 )
 
@@ -61,7 +61,7 @@ st.button(
 )
 
 kwargs = {
-    "cohort": cohort,
+    "cohort": cohort.lower(),
     "mni_coordinate": [X, Y, Z],
     "plot_dst_dir": st.session_state.get("plot_dst_dir"),
 }
@@ -79,15 +79,18 @@ if st.session_state.get("afni_output_text"):
         st.text(st.session_state.get("afni_output_text"), text_alignment="center")
 
     if output := st.session_state.get("sphere_output"):
+        has_figure = False
 
-        for atlas, content in output.items():
+        for content in output.values():
             if sphere_filename := content.get("afni_sphere_filename"):
                 st.success(f"Plot saved to: {sphere_filename}")
 
             if sphere_figure := content.get("afni_sphere_figure"):
                 st.pyplot(sphere_figure)
+                has_figure = True
 
-                st.caption(
-                    "**Note:** The radius of the red sphere matches the distance from the "
-                    "coordinate to the closest label in this atlas."
-                )
+        if has_figure:
+            st.caption(
+                "**Note:** In each figure, the radius of the red sphere matches the distance "
+                "from the coordinate to the closest label in that atlas."
+            )

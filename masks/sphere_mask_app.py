@@ -26,7 +26,7 @@ st.divider()
 st.markdown("**Required Arguments**")
 
 cohort = st.selectbox(
-    "Cohort", ("kids", "adults"), help="Determines the template space used."
+    "Cohort", ("Kids", "Adults"), help="Determines the template space used."
 )
 
 col1, col2, col3 = st.columns(3)
@@ -67,7 +67,7 @@ if original_coordinate_space == "Talairach":
         ("Lancaster", "Brett"),
         help=(
             "The method to use to transform the Talairach coordinate to MNI space. "
-            "Use the Lancaster method unless the paper is pre-2007/2008 or specifically "
+            "Use the Lancaster method unless the paper is pre-2010 or specifically "
             "states that the Brett transform was used."
         ),
     )
@@ -96,7 +96,7 @@ st.button(
 )
 
 kwargs = {
-    "cohort": cohort,
+    "cohort": cohort.lower(),
     "coordinate": [X, Y, Z],
     "sphere_radius": sphere_radius,
     "original_coordinate_space": original_coordinate_space,

@@ -40,7 +40,7 @@ Converted (output format):
 st.divider()
 
 st.markdown("**Required Arguments**")
-cohort = st.selectbox("Cohort", ("kids", "adults"), help="The cohort.")
+cohort = st.selectbox("Cohort", ("Kids", "Adults"), help="The cohort.")
 
 if st.button(
     "Browse for source (NIH toolbox) file",
@@ -97,7 +97,7 @@ include_assessment_dates = st.checkbox(
 )
 
 kwargs = {
-    "cohort": cohort,
+    "cohort": cohort.lower(),
     "unorganized_nih_toolbox_file": st.session_state.get(
         "unorganized_nih_toolbox_file"
     ),

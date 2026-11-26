@@ -23,7 +23,7 @@ APP_DIRS = [
     "templates",
 ]
 
-SKIP_DIRS = {"__pycache__", "api"}
+SKIP_DIRS = {"__pycache__", "api", "analysis", "web"}
 SKIP_SUFFIXES = {".sb", ".md", ".pyc"}
 
 EXTRA_IMPORTS = ["openpyxl", "tkinter.filedialog"]
@@ -32,7 +32,6 @@ COLLECT_ALL = ["streamlit", "nilearn"]
 COLLECT_DATA = ["pdfminer"]
 
 EXCLUDES = ["pyvista", "vtk", "vtkmodules", "imageio_ffmpeg", "pytest"]
-
 
 def _app_files():
     files = [ROOT / name for name in ROOT_FILES]
@@ -47,7 +46,6 @@ def _app_files():
             files.append(path)
 
     return files
-
 
 def _imports_used_by(py_files):
     local_names = {path.stem for path in py_files}
