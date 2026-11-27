@@ -36,6 +36,7 @@ class LookupParameters(BaseModel):
     coordinate_space: Literal["MNI", "Talairach"] = "MNI"
     transform_method: Literal["Lancaster", "Brett"] = "Lancaster"
 
+
 # extra ccheck
 def _check_mni_bounds(coordinate):
     for value, (low, high) in zip(coordinate, MNI_BOUNDS.values()):
@@ -110,6 +111,7 @@ def lancaster_transform(coord):
 
 TRANSFORM_DICT = {"Brett": brett_transform, "Lancaster": lancaster_transform}
 
+
 def create_transform_text(
     original_coordinate_space, original_coordinate, coordinate, transform_method
 ):
@@ -125,6 +127,7 @@ def create_transform_text(
         "IMPORTANT: Talairach to MNI transforms are approximate and can be off by several millimeters. "
         "Coordinates near the cortical surface may land at the edge of the brain or just outside it."
     )
+
 
 # on arm server caddy listens to ports 443 and 80 and forward request to localhost
 # via port 8000, so geting address like this should be dine
@@ -162,7 +165,9 @@ def to_base64(figure) -> str:
 
 
 @lru_cache(maxsize=256)
-def cached_lookup(cohort: str, x: int, y: int, z: int, coordinate_space: str, transform_method: str) -> dict:
+def cached_lookup(
+    cohort: str, x: int, y: int, z: int, coordinate_space: str, transform_method: str
+) -> dict:
     if not PROGRESS.acquire(blocking=False):
         raise HTTPException(503, "Server is busy, try again soon.")
 
@@ -180,7 +185,9 @@ def cached_lookup(cohort: str, x: int, y: int, z: int, coordinate_space: str, tr
                     coordinate_space, original_coordinate, coordinate, transform_method
                 )
 
-                afni_text, output = run_pipeline(cohort, [coordinate[0], coordinate[1], coordinate[2]], None)
+                afni_text, output = run_pipeline(
+                    cohort, [coordinate[0], coordinate[1], coordinate[2]], None
+                )
                 atlases = []
 
                 for content in output.values():
@@ -196,7 +203,11 @@ def cached_lookup(cohort: str, x: int, y: int, z: int, coordinate_space: str, tr
     finally:
         PROGRESS.release()
 
-    return {"afni_text": afni_text, "coordinate_transform_text": coordinate_transform_text, "atlases": atlases}
+    return {
+        "afni_text": afni_text,
+        "coordinate_transform_text": coordinate_transform_text,
+        "atlases": atlases,
+    }
 
 
 @app.post("/lookup")
@@ -205,7 +216,12 @@ def lookup(parameters: LookupParameters, request: Request):
 
     try:
         return cached_lookup(
-            parameters.cohort, parameters.x, parameters.y, parameters.z, parameters.coordinate_space, parameters.transform_method
+            parameters.cohort,
+            parameters.x,
+            parameters.y,
+            parameters.z,
+            parameters.coordinate_space,
+            parameters.transform_method,
         )
     except HTTPException:
         raise

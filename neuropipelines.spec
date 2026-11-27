@@ -23,7 +23,7 @@ APP_DIRS = [
     "templates",
 ]
 
-SKIP_DIRS = {"__pycache__", "api", "analysis", "web"}
+SKIP_DIRS = {"__pycache__", "api"}
 SKIP_SUFFIXES = {".sb", ".md", ".pyc"}
 
 EXTRA_IMPORTS = ["openpyxl", "tkinter.filedialog"]
@@ -46,6 +46,7 @@ def _app_files():
             files.append(path)
 
     return files
+
 
 def _imports_used_by(py_files):
     local_names = {path.stem for path in py_files}

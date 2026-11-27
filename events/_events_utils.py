@@ -193,7 +193,7 @@ def _app(caller, pipeline):
             st.error(f"Not a valid log directory: {st.session_state.get('log_dir')}")
 
     cohort = st.selectbox(
-        "Cohort", ("kids", "Adults"), help="Determines which tasks are available."
+        "Cohort", ("Kids", "Adults"), help="Determines which tasks are available."
     )
 
     if cohort == "Kids":

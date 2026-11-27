@@ -112,7 +112,7 @@ async function render_content(response, error_message) {
 
             return;
         }
-        
+
         let body = (await response.json());
         TRANSFORM_TEXT.textContent = body.coordinate_transform_text !== "Placeholder" ? body.coordinate_transform_text : "";
         TEXT_OUTPUT.textContent = body.afni_text;
@@ -122,7 +122,7 @@ async function render_content(response, error_message) {
                 continue;
             }
 
-            FIGURES.insertAdjacentHTML("beforeend", 
+            FIGURES.insertAdjacentHTML("beforeend",
             `
                 <figure>
                     <img src="data:image/png;base64,${figure}">
@@ -132,7 +132,7 @@ async function render_content(response, error_message) {
         }
 
         if (body.atlases.some(Boolean)) {
-            FIGURES.insertAdjacentHTML("beforeend", 
+            FIGURES.insertAdjacentHTML("beforeend",
             `
                 <p>Note: In each figure, the radius of the red sphere matches the distance from the coordinate to the closest label in that atlas.</p>
             `
@@ -158,7 +158,7 @@ async function handle_submission(press) {
     if (SUBMISSION_IN_PROGRESS) {
         return;
     }
-    
+
     ERROR_MESSAGE.textContent = "";
     ERROR.hidden = true;
     SPINNER.hidden = false;
