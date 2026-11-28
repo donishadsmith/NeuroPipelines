@@ -33,7 +33,7 @@ This option doesn't require an explicit download of Python 3.10+ or any prior in
 
 ## Installation
 
-**Requires Python 3.10+**
+Download Python 3.10 or higher:
 
 [Get Python 3.13 on Windows Store](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=US&ocid=pdpshare)
 
@@ -59,7 +59,7 @@ Or use a virtual environment:
 ```bash
 python -m venv venv
 
-# Linux
+# Linux/MacOS
 source venv/bin/activate
 
 # Windows
@@ -76,7 +76,7 @@ Double click on:
 
 or
 
-In terminal:
+In in your preferred terminal:
 ```bash
 streamlit run app.py
 ```
