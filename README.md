@@ -86,6 +86,7 @@ streamlit run app.py
 
 ### HPC (Conda)
 
+To use the first and second level fMRI pipelines, the HPC must be used a Conda environment must be created.
 ```bash
 conda create -n neuropiplines python=3.10
 conda activate neuropiplines
