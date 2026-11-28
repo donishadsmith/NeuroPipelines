@@ -89,7 +89,7 @@ streamlit run app.py
 ```bash
 conda create -n neuropiplines python=3.10
 conda activate neuropiplines
-# if conda activate doesn't work, your conda is old, so do:
+# or use:
 # source activate neuropiplines
 pip install -r requirements.txt
 ```
